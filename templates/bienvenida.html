@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+{% block head_extras %}
+<style>
+  /* Oculta los enlaces del footer SOLO en esta vista */
+  .yx-footer .hstack { display: none !important; }
+
+  /* Hero centrado */
+  .welcome-hero {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .welcome-hero h1 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    margin-bottom: .5rem;
+  }
+  .welcome-hero p {
+    font-size: 1.1rem;
+    color: var(--muted);
+  }
+
+  /* Tarjeta sucursal centrada y más compacta */
+  .branch-card {
+    max-width: 480px;
+    margin-inline: auto;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  .branch-card h2 {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+
+  .branch-card .yx-field label {
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .branch-card select {
+    text-align: center;
+    font-size: 1rem;
+    background: #121720;
+  }
+
+  .branch-card .yx-btn {
+    width: 100%;
+  }
+
+  /* Compactar los botones */
+  .branch-card .yx-grid-2 {
+    gap: .6rem;
+  }
+
+  /* Centrar sección de sucursal seleccionada */
+  .selected-branch {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    max-width: 500px;
+    margin: 2rem auto 0;
+  }
+</style>
+{% endblock %}
+
+<div class="yx-center-page">
+  <div class="welcome-wrap yx-fade">
+
+    <!-- HERO -->
+    <section class="yx-hero yx-surface yx-mb-3 welcome-hero">
+      <h1 class="yx-title welcome-title">Bienvenido a <strong>Cinema3D</strong></h1>
+      <p class="yx-subtitle">Elegí tu sucursal para ver la cartelera y comprar tus entradas.</p>
+    </section>
+
+    <!-- TARJETA SUCURSAL -->
+    <section class="yx-surface yx-fade branch-card">
+      <h2 class="yx-title">Seleccioná una sucursal</h2>
+
+      <form method="post" action="{{ url_for('main.set_branch') }}" class="yx-grid" style="gap:1rem;" autocomplete="off">
+        <div class="yx-field">
+          <label for="branch" class="yx-label">Sucursal</label>
+          <select id="branch" name="branch" class="yx-select">
+            {% set selected_id = (current_branch_id if current_branch_id is defined
+                                  else (current_branch.id if current_branch is defined else None)) %}
+            {% for b in branches %}
+              <option value="{{ b.id }}" {{ 'selected' if selected_id == b.id else '' }}>{{ b.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="yx-grid yx-grid-2">
+          <button type="submit" class="yx-btn yx-btn--primary">Seleccionar</button>
+          <button type="submit" class="yx-btn yx-btn--ghost" formaction="{{ url_for('main.clear_branch') }}">Quitar selección</button>
+        </div>
+
+        <div class="yx-center yx-mt-2">
+          <a class="yx-btn yx-btn--ghost" href="{{ url_for('venta.cartelera') }}">Ver cartelera</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- SUCURSAL SELECCIONADA -->
+    {% if (current_branch is defined and current_branch) or (session.branch is defined and session.branch) %}
+    <section class="yx-surface yx-fade selected-branch">
+      <div>
+        <div style="font-weight:600;">Sucursal seleccionada</div>
+        <div class="yx-muted">
+          <strong>
+            {% if current_branch is defined and current_branch %}
+              {{ current_branch.nombre }}
+            {% elif session.branch is defined and session.branch %}
+              {{ session.branch }}
+            {% endif %}
+          </strong>
+        </div>
+        <div class="yx-center yx-mt-2">
+          <a class="yx-btn yx-btn--primary" href="{{ url_for('venta.cartelera') }}">Ir a cartelera</a>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

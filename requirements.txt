@@ -1,0 +1,51 @@
+# Core web stack
+Flask>=3.0,<4.0
+Jinja2>=3.1
+Werkzeug>=3.0
+
+# Email
+Flask-Mail>=0.9.1,<1.0
+
+# Variables de entorno (.env)
+python-dotenv>=1.0.1
+
+# PDFs & QR
+fpdf2>=2.7
+qrcode[pil]>=7.4
+
+# CSRF/forms
+Flask-WTF>=1.2
+
+# Rate limiting
+Flask-Limiter>=3.7
+
+# Base de datos
+Flask-SQLAlchemy>=3.0
+Flask-Migrate>=4.0
+
+# PostgreSQL driver (para producción)
+psycopg2-binary>=2.9
+
+# MySQL driver (alternativo)
+PyMySQL>=1.0
+
+# Servidor de producción
+gunicorn>=21.2
+
+# MercadoPago SDK
+mercadopago>=2.2.5
+
+# Validaciones
+email-validator>=2.0
+
+# Fecha y hora
+pytz>=2023.3
+
+# Para imágenes y archivos
+Pillow>=10.0
+
+# Logging avanzado
+python-json-logger>=2.0
+
+# Seguridad adicional
+cryptography>=41.0

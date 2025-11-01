@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Confirmación de compra | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* Oculta links del footer SOLO aquí */
+  .yx-footer .hstack{ display:none !important; }
+
+  /* ===== LAYOUT GENERAL ===== */
+  .conf-wrap{ width:min(1200px,96%); margin-inline:auto; }
+  .conf-grid{
+    display:grid;
+    grid-template-columns: minmax(0, 1fr) 420px; /* IZQ / DER */
+    gap: clamp(16px,2.5vw,24px);
+    align-items:start;
+  }
+  @media (max-width: 1024px){
+    .conf-grid{ grid-template-columns: 1fr; }
+  }
+
+  /* Tarjetas */
+  .card-plain{
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: clamp(16px,2vw,20px);
+  }
+
+  /* ===== COLUMNA IZQUIERDA (DETALLE) ===== */
+  .conf-title{
+    margin:0 0 .25rem;
+    font-size: clamp(1.6rem,2.2vw,2rem);
+    font-weight: 800;
+    letter-spacing:.2px;
+    text-align:left;
+  }
+  .conf-sub{ margin:0; color:var(--muted); }
+
+  .stack{ display:grid; gap:14px; }
+
+  .block-title{
+    margin:0 0 .5rem;
+    font-weight:800;
+    font-size:1.05rem;
+    color:#cfe0ff;
+  }
+  .movie-title{ margin:0 0 2px; font-weight:800; font-size:1.15rem; }
+  .movie-info{ margin:0; color:var(--muted); }
+
+  /* Chips de asientos */
+  .seats{ display:flex; flex-wrap:wrap; gap:8px; margin-top:.6rem; }
+  .seat{
+    background: linear-gradient(135deg,#4f6df5,#3b56e8);
+    color:#fff; padding:6px 12px; border-radius:999px; font-weight:700; font-size:.92rem;
+    border: 1px solid color-mix(in srgb, #3b56e8 70%, black);
+  }
+
+  /* Lista de combos */
+  .combo{
+    background:#0f1428;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    padding:10px 12px;
+    display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;
+  }
+  .combo h4{ margin:0; font-weight:700; }
+  .combo p{ margin:2px 0 0; color:var(--muted); font-size:.92rem; }
+  .combo .price{ color:#22c55e; font-weight:800; white-space:nowrap; }
+
+  .inline-actions{ margin-top:.9rem; display:flex; gap:.6rem; flex-wrap:wrap; }
+
+  /* ===== COLUMNA DERECHA (RESUMEN) ===== */
+  .summary{
+    position: sticky; top: 88px; /* alto de tu navbar */
+    background: var(--surface);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: clamp(16px,2vw,20px);
+  }
+  @media (max-width:1024px){ .summary{ position:static; } }
+
+  .summary h3{ margin:0 0 .75rem; color:#9fb1ff; font-weight:800; }
+  .sum-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .sum-row:last-child{ border-bottom:0; }
+  .sum-total{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding-top:12px; margin-top:8px; border-top:2px solid rgba(79,109,245,.28);
+    font-size:1.35rem; font-weight:800; color:#22c55e;
+  }
+  .sum-note{ color:var(--muted); text-align:center; margin-top:.8rem; }
+
+  /* ===== ACCIONES FINALES ===== */
+  .final-actions{
+    margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  @media (max-width:720px){
+    .final-actions{ flex-direction:column; align-items:stretch; }
+    .final-actions .btn-primary, .final-actions .btn-ghost{ width:100%; }
+  }
+
+  /* --- NORMALIZA LOS BOTONES (mismo alto/estilo) --- */
+  .final-actions .btn-primary,
+  .final-actions .btn-ghost{
+    display:inline-flex; align-items:center; justify-content:center;
+    height:48px; padding:0 1rem; border-radius:12px; font-weight:700; line-height:1;
+    text-decoration:none; box-sizing:border-box;
+  }
+  .final-actions .btn-primary{
+    background: linear-gradient(135deg,#4f6df5,#7c3aed);
+    color:#fff; border:0; box-shadow:0 10px 24px rgba(79,109,245,.25);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .final-actions .btn-primary:hover{ transform:translateY(-1px); filter:brightness(1.03); }
+
+  .final-actions .btn-ghost{
+    background: rgba(255,255,255,.08);
+    color:#e8edf7; border:1px solid rgba(255,255,255,.16);
+    transition: background .15s ease, border-color .15s ease, filter .15s ease;
+  }
+  .final-actions .btn-ghost:hover{
+    background: rgba(255,255,255,.12);
+    border-color: rgba(255,255,255,.22);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{# ====== Normalización de datos SIN tocar tu backend ====== #}
+{% set sel = seleccion|default({
+  'titulo': pelicula|default('-'),
+  'fecha':  fecha|default('-'),
+  'hora':   hora|default('-'),
+  'sala':   sala|default('-')
+}) %}
+{% set _seats = seats|default([]) %}
+{% set _combos = combos|default([]) %}
+{% set _total_entradas = total_entradas|default(0.0) %}
+{% set _total_combos = total_combos|default((_combos|map(attribute='precio')|sum) if _combos else 0.0) %}
+{% set _total = total|default(_total_entradas + _total_combos) %}
+{% set suc = sucursal|default(session.branch if session and session.branch is defined else '-') %}
+
+<div class="page-container conf-wrap">
+  <div class="conf-grid">
+
+    <!-- ===== IZQUIERDA: Detalle completo ===== -->
+    <div class="stack">
+      <!-- Cabecera sin “hero” angosto -->
+      <section class="card-plain">
+        <h1 class="conf-title">Revisá tu compra</h1>
+        <p class="conf-sub">Sucursal: <strong style="color:var(--text)">{{ suc }}</strong></p>
+      </section>
+
+      <!-- Función -->
+      <section class="card-plain">
+        <h3 class="block-title">Función</h3>
+        <h2 class="movie-title">{{ sel.titulo }}</h2>
+        <p class="movie-info">{{ sel.fecha }} · {{ sel.hora }} · {{ sel.sala }}</p>
+      </section>
+
+      <!-- Asientos -->
+      <section class="card-plain">
+        <h3 class="block-title">Asientos</h3>
+
+        {% if _seats and _seats|length > 0 %}
+          <div class="seats">
+            {% for s in _seats %}<span class="seat">{{ s }}</span>{% endfor %}
+          </div>
+
+          {% if _total_entradas %}
+            <p class="movie-info" style="margin-top:.7rem;">
+              Entradas: <strong style="color:var(--text)">{{ _seats|length }}</strong><br>
+              Subtotal entradas: <strong style="color:#22c55e">${{ '%.2f'|format(_total_entradas) }}</strong>
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="movie-info">Sin asientos seleccionados.</p>
+        {% endif %}
+
+        <div class="inline-actions">
+          <a class="btn-ghost" href="{{ url_for('venta.reserva_asientos') }}">Editar asientos</a>
+        </div>
+      </section>
+
+      <!-- Combos -->
+      {% if _combos and _combos|length > 0 %}
+      <section class="card-plain">
+        <h3 class="block-title">Combos</h3>
+
+        <div class="stack" style="gap:10px;">
+          {% for combo in _combos %}
+            <div class="combo">
+              <div>
+                <h4>{{ combo.nombre }}</h4>
+                {% if combo.descripcion %}<p>{{ combo.descripcion }}</p>{% endif %}
+              </div>
+              <div class="price">${{ '%.2f'|format(combo.precio) }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="inline-actions">
+          <a class="btn-ghost" href="{{ url_for('venta.combos') }}">Editar combos</a>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Acciones finales -->
+      <div class="final-actions">
+        <a class="btn-ghost" href="{{ url_for('venta.cartelera') }}">← Volver</a>
+        <form method="post" action="{{ url_for('pago.pago') }}" style="display:inline;">
+          <button type="submit" class="btn-primary">Proceder al pago →</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== DERECHA: Resumen fijo ===== -->
+    <aside class="summary">
+      <h3>Resumen</h3>
+
+      <div class="sum-row">
+        <span>Subtotal entradas</span>
+        <span>${{ '%.2f'|format(_total_entradas) }}</span>
+      </div>
+
+      <div class="sum-row">
+        <span>Subtotal combos</span>
+        <span>${{ '%.2f'|format(_total_combos) }}</span>
+      </div>
+
+      <div class="sum-total">
+        <span>TOTAL</span>
+        <span>${{ '%.2f'|format(_total) }}</span>
+      </div>
+
+      <p class="sum-note">Revisá bien la selección antes de continuar al pago.</p>
+    </aside>
+
+  </div>
+</div>
+{% endblock %}

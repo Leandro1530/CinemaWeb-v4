@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Pago de entradas | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Diseño unificado moderno (glass + grid + animaciones suaves) ===== */
+  .paynew-wrap { max-width: 960px; margin-inline: auto; padding: clamp(16px,3vw,32px); }
+  .paynew-header { text-align:center; margin-bottom: clamp(20px,3vw,32px); }
+  .paynew-header h1 { font-size: clamp(1.6rem,2.3vw,2rem); font-weight:800; margin:0 0 .25rem; }
+  .paynew-header p { color: var(--muted); margin:0; }
+
+  .summary-card {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(79,109,245,.25);
+    border-radius: 16px;
+    padding: clamp(18px,2vw,28px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.25);
+    margin-bottom: 24px;
+  }
+
+  .summary-card h3 { margin:0 0 10px; font-weight:700; color:#cbd5ff; }
+  .summary-info { color:var(--muted); margin-bottom: 10px; }
+  .amount-total {
+    border-top: 1px solid rgba(79,109,245,.3);
+    margin-top: 10px; padding-top: 10px;
+    display:flex; justify-content:space-between;
+    font-weight:800; font-size:1.2rem;
+  }
+  .amount-highlight{ color:#22c55e; }
+
+  .methods-grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap: 14px; margin-bottom: 1.5rem;
+  }
+
+  .method-card {
+    padding: 1.5rem;
+    border-radius: 14px;
+    border: 2px solid rgba(79,109,245,.25);
+    background: rgba(255,255,255,.03);
+    text-align:center;
+    cursor:pointer;
+    transition:all .25s ease;
+  }
+  .method-card:hover { border-color:#4f6df5; transform:translateY(-3px); }
+  .method-card.selected {
+    border-color:#4f6df5;
+    box-shadow:0 10px 25px rgba(79,109,245,.25);
+    background:rgba(79,109,245,.08);
+  }
+  .method-icon{ font-size:2.5rem; margin-bottom:.4rem; }
+  .method-title{ font-weight:700; color:var(--text); }
+  .method-desc{ color:var(--muted); font-size:.9rem; margin-top:.25rem; }
+  .method-benefit{ color:#4f6df5; font-weight:600; font-size:.85rem; margin-top:.4rem; }
+
+  .card-form{
+    display:none;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(79,109,245,.25);
+    border-radius:14px;
+    padding:1.5rem;
+    margin-top:1.2rem;
+    animation:fadeIn .3s ease;
+  }
+  .card-form.show{ display:block; }
+  @keyframes fadeIn{ from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:none;} }
+
+  .grid3{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:12px; }
+  .form-field{ display:flex; flex-direction:column; gap:.3rem; }
+  .form-field label{ color:var(--muted); font-weight:600; font-size:.9rem; }
+  .form-field input, .form-field select{
+    padding:.6rem .8rem; border-radius:10px;
+    border:1px solid rgba(255,255,255,.12);
+    background:#0f1428; color:#e5e7eb;
+    transition:border-color .2s,background .2s;
+  }
+  .form-field input:focus, .form-field select:focus{
+    outline:none; border-color:#4f6df5; background:#121936;
+  }
+
+  .btn-primary{
+    width:100%; margin-top:14px;
+    padding:.85rem 1.2rem; font-weight:700; border:none;
+    border-radius:10px; color:#fff;
+    background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    cursor:pointer; transition:transform .25s,box-shadow .25s;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.3); }
+
+  .actions{ text-align:center; margin-top:1.5rem; }
+  .actions .btn-ghost{ margin-inline:8px; }
+
+  @media(max-width:768px){
+    .paynew-wrap{ padding:1rem; }
+    .methods-grid{ grid-template-columns:1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container paynew-wrap">
+  <div class="paynew-header">
+    <h1>Finalizar Compra</h1>
+    <p>Elegí el método que prefieras para completar tu pago</p>
+  </div>
+
+  <!-- Resumen -->
+  <section class="summary-card">
+    <h3>Resumen de tu compra</h3>
+    <div class="summary-info">
+      <strong>{{ seleccion.titulo or 'Película seleccionada' }}</strong><br>
+      {{ seleccion.fecha or 'Fecha' }} · {{ seleccion.hora or 'Hora' }} · Sala {{ seleccion.sala or '1' }}<br>
+      Asientos: {{ seats|join(', ') if seats else 'Sin asientos' }}
+    </div>
+    {% if combos %}
+      <div class="summary-info">
+        <strong>Combos:</strong><br>
+        {% for combo in combos %}• {{ combo.nombre }} - ${{ "%.2f"|format(combo.precio) }}<br>{% endfor %}
+      </div>
+    {% endif %}
+    <div class="amount-total">
+      <span>Total a pagar</span>
+      <span class="amount-highlight">${{ "%.2f"|format(total) if total else "0.00" }}</span>
+    </div>
+  </section>
+
+  <!-- Métodos -->
+  <section>
+    <div class="methods-grid">
+      <div class="method-card" id="mp-method" onclick="selectMercadoPago()">
+        <div class="method-icon">💳</div>
+        <div class="method-title">Mercado Pago</div>
+        <div class="method-desc">Tarjetas, efectivo y transferencias</div>
+        <div class="method-benefit">✓ Múltiples opciones seguras</div>
+      </div>
+      <div class="method-card" id="card-method" onclick="selectTarjeta()">
+        <div class="method-icon">💳</div>
+        <div class="method-title">Tarjeta directa</div>
+        <div class="method-desc">Paga sin salir del sitio</div>
+        <div class="method-benefit">✓ Confirmación inmediata</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formulario de tarjeta -->
+  <div id="card-form" class="card-form">
+    <h3 style="margin-top:0;">Datos de tu tarjeta</h3>
+    <form method="POST" action="{{ url_for('pago.pago') }}">
+      <input type="hidden" name="email" value="{{ email or 'usuario@ejemplo.com' }}">
+      <div class="grid3">
+        <div class="form-field full-width">
+          <label>Número de tarjeta</label>
+          <input id="pan" name="pan" maxlength="19" placeholder="1234 5678 9012 3456" required>
+        </div>
+        <div class="form-field">
+          <label>Mes</label>
+          <select id="exp_mes" name="exp_mes" required>
+            <option value="">MM</option>
+            {% for mes in range(1,13) %}
+            <option value="{{ '%02d'|format(mes) }}">{{ '%02d'|format(mes) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Año</label>
+          <select id="exp_anio" name="exp_anio" required>
+            <option value="">AAAA</option>
+            {% for anio in range(2024,2035) %}
+            <option value="{{ anio }}">{{ anio }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>CVV</label>
+          <input id="cvv" name="cvv" maxlength="4" placeholder="123" required>
+        </div>
+        <div class="form-field full-width">
+          <label>Nombre del titular</label>
+          <input id="nombre_tarjeta" name="nombre_tarjeta" placeholder="NOMBRE APELLIDO" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">Procesar pago — ${{ "%.2f"|format(total) }}</button>
+    </form>
+  </div>
+
+  <!-- Acciones -->
+  <div class="actions">
+    <a href="{{ url_for('venta.combos') }}" class="btn-ghost">← Volver</a>
+    <a href="{{ url_for('main.bienvenida') }}" class="btn-ghost">Inicio</a>
+  </div>
+</div>
+
+<script>
+function selectMercadoPago(){
+  document.querySelectorAll('.method-card').forEach(m=>m.classList.remove('selected'));
+  document.getElementById('mp-method').classList.add('selected');
+  document.getElementById('card-form').classList.remove('show');
+  setTimeout(()=>{ window.location.href = '/pago-mp/'; }, 500);
+}
+function selectTarjeta(){
+  document.querySelectorAll('.method-card').forEach(m=>m.classList.remove('selected'));
+  document.getElementById('card-method').classList.add('selected');
+  document.getElementById('card-form').classList.add('show');
+  document.getElementById('card-form').scrollIntoView({ behavior:'smooth' });
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const pan=document.getElementById('pan'); const cvv=document.getElementById('cvv');
+  if(pan){ pan.addEventListener('input',e=>{
+    let v=e.target.value.replace(/\D/g,'').slice(0,16);
+    e.target.value=v.replace(/(.{4})/g,'$1 ').trim();
+  });}
+  if(cvv){ cvv.addEventListener('input',e=>{
+    e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);
+  });}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block title %}Reserva de asientos | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+/* Ocultar enlaces del footer SOLO en esta vista */
+.yx-footer .hstack{ display:none !important; }
+
+/* Un poco menos de aire arriba */
+.page-container.yx-section{ padding-top:12px; }
+
+/* ===== Contenedor ===== */
+.rsv-wrap{ max-width:1200px; margin:0 auto; padding:clamp(14px,3vw,22px); display:grid; gap:14px; }
+
+/* ===== Encabezado ===== */
+.rsv-hero{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px; padding:14px 16px;
+}
+.rsv-title{ margin:0; font-weight:900; font-size:clamp(1.1rem,2.4vw,1.45rem); }
+.rsv-meta{ color:#9ca3af; margin-top:.2rem }
+
+/* ===== Grid principal (2 col.) ===== */
+.rsv-grid{
+  display:grid; gap:14px;
+  grid-template-columns: 1.35fr .8fr;   /* izquierda sala | derecha resumen */
+  align-items:start;
+}
+
+/* ===== Sala (izquierda) ===== */
+.sala-card{
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  border-radius:14px; padding:14px;
+}
+.screen-bar{
+  margin:10px auto 8px; height:5px; width:min(520px,94%);
+  background:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.25),rgba(255,255,255,.10));
+  border-radius:999px; box-shadow:0 6px 18px rgba(255,255,255,.14) inset;
+}
+
+/* ---- Asientos (más chicos) ---- */
+.seat-grid{ display:grid; gap:8px; justify-content:center; margin-top:4px; }
+.seat-row{ display:flex; gap:6px; justify-content:center; align-items:center; }
+.row-label{ color:#9fb1ff; font-weight:800; width:20px; text-align:right; margin-right:4px; }
+
+.seat-btn{
+  width:36px; height:36px; border-radius:8px; font-weight:800; border:2px solid #1f2937;
+  background:#0b1222; color:#e5e7eb; cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+.seat-btn:hover:not(.seat-taken):not(:disabled){ transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.26); border-color:#4f6df5; }
+.seat-taken{ background:#1f2937; color:#6b7280; cursor:not-allowed; }
+.seat-selected{ background:#22c55e !important; color:#032b12 !important; border-color:#16a34a !important; transform:translateY(-1px); }
+.seat-available[disabled]{ opacity:.5; cursor:not-allowed; }
+
+/* ===== Panel derecho (solo RESUMEN) ===== */
+.box{
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  border-radius:14px; padding:14px;
+}
+.badge{ display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; background:#4f6df5; color:#fff; font-weight:800; }
+.badge-warn{ background:#f59e0b; color:#111 }
+.total{ color:#22c55e; font-weight:900 }
+.actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.btn-primary{
+  background:linear-gradient(135deg,#4f6df5,#7c3aed); color:#fff; border:0; border-radius:12px;
+  padding:.8rem 1.2rem; font-weight:900; cursor:pointer; flex:1 1 160px;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.28) }
+.btn-outline{ background:transparent; color:#9fb1ff; border:1px solid rgba(79,109,245,.35); border-radius:12px; padding:.8rem 1.2rem; font-weight:800; flex:1 1 160px; }
+.btn-outline:hover{ background:rgba(79,109,245,.12) }
+
+/* ===== Modal cantidad ===== */
+.modal-overlay{
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(10px); z-index:1000; opacity:1; transition:opacity .25s ease;
+}
+.modal-content{
+  width:min(520px,92%); background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:22px;
+  text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.45);
+}
+.modal-title{ margin:0 0 .25rem; font-weight:900; font-size:1.5rem; }
+.modal-sub{ color:#9ca3af; margin:.25rem 0 1rem; }
+.qty-row{ display:flex; align-items:center; justify-content:center; gap:12px; margin:8px 0 6px; }
+.qty-btn{
+  width:48px; height:48px; border-radius:999px; border:0; cursor:pointer; font-size:1.3rem; font-weight:900;
+  background:#4f6df5; color:#fff; transition:transform .15s ease, filter .15s ease;
+}
+.qty-btn:hover{ transform:scale(1.06); filter:brightness(1.05) }
+.qty-btn:disabled{ opacity:.45; cursor:not-allowed; transform:none }
+#ticket-quantity{
+  width:86px; height:62px; border:0; border-radius:12px; background:rgba(255,255,255,.08);
+  color:#fff; text-align:center; font-size:1.9rem; font-weight:900;
+}
+.modal-total{
+  margin-top:.75rem; padding:.75rem; border-radius:12px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  color:#e5e7eb;
+}
+.modal-total strong{ color:#22c55e; }
+
+/* ===== Responsive ===== */
+@media (max-width:1024px){
+  .rsv-grid{ grid-template-columns: 1fr; }
+}
+@media (max-width:768px){
+  .row-label{ display:none; }
+  .btn-primary,.btn-outline{ width:100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rsv-wrap">
+
+  <!-- MODAL: cantidad primero -->
+  <div id="qty-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="qty-title">
+    <div class="modal-content">
+      <h2 id="qty-title" class="modal-title">¿Cuántas entradas necesitás?</h2>
+      <p class="modal-sub">{{ pelicula }} • {{ fecha }} • {{ hora }} • {{ sala }}</p>
+
+      <div class="qty-row">
+        <button type="button" id="dec-btn" class="qty-btn">−</button>
+        <input type="number" id="ticket-quantity" value="1" min="1" max="{{ max_per_order }}" readonly>
+        <button type="button" id="inc-btn" class="qty-btn">+</button>
+      </div>
+
+      <div class="modal-total">
+        Precio por entrada: ${{ "%.0f"|format(precio_entrada) }}<br>
+        <strong>Total: <span id="qty-total">${{ "%.0f"|format(precio_entrada) }}</span></strong>
+      </div>
+
+      <button id="confirm-qty" class="btn-primary" style="margin-top:10px;">Seleccionar asientos →</button>
+    </div>
+  </div>
+
+  <!-- Encabezado sin botón “PANTALLA” -->
+  <section class="rsv-hero" aria-hidden="true" id="hero">
+    <h1 class="rsv-title">Elegí tus asientos</h1>
+    <div class="rsv-meta">{{ fecha }} • {{ hora }} • Sala {{ sala }}</div>
+  </section>
+
+  <!-- GRID: Sala izquierda | Resumen derecha -->
+  <div class="rsv-grid">
+    <!-- IZQUIERDA -->
+    <section class="sala-card" aria-hidden="true" id="room">
+      <div class="screen-bar" aria-hidden="true"></div>
+
+      <form id="seat-form" method="POST" action="{{ url_for('venta.reserva_asientos') }}">
+        <input type="hidden" name="seats" id="seats">
+
+        <div id="seat-grid" class="seat-grid" data-cols="{{ cols }}" data-max="{{ max_per_order }}">
+          {% for r in rows_str %}
+          <div class="seat-row" role="row" aria-label="Fila {{ r }}">
+            <div class="row-label">{{ r }}</div>
+            {% for c in range(1, cols + 1) %}
+              {% set code = r ~ c %}
+              {% if code in reserved %}
+                <button type="button" class="seat-btn seat-taken" aria-disabled="true">{{ c }}</button>
+              {% else %}
+                {% set is_sel = (selected is defined and code in selected) %}
+                <button type="button"
+                        class="seat-btn seat-available {% if is_sel %}seat-selected{% endif %}"
+                        data-seat="{{ code }}"
+                        aria-pressed="{{ 'true' if is_sel else 'false' }}"
+                        disabled>{{ c }}</button>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </form>
+    </section>
+
+    <!-- DERECHA: SOLO RESUMEN -->
+    <aside class="box">
+      <div style="font-weight:800; margin-bottom:8px;">Resumen</div>
+      <p style="margin:6px 0;">Debés elegir <span id="req" class="badge">1</span> — Faltan <span id="rem" class="badge badge-warn">1</span></p>
+      <p style="margin:6px 0;">Asientos seleccionados: <span id="sel-count" class="badge">0</span></p>
+      <p style="margin:6px 0;">Total: <span id="sum-total" class="total">$0</span></p>
+      <div class="actions" style="margin-top:10px;">
+        <button type="button" id="change-qty" class="btn-outline">← Cambiar cantidad</button>
+        <button type="submit" form="seat-form" id="go" class="btn-primary" disabled>Continuar →</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ----- Nodos -----
+  const modal = document.getElementById('qty-modal');
+  const hero  = document.getElementById('hero');
+  const room  = document.getElementById('room');
+
+  const qInput = document.getElementById('ticket-quantity');
+  const decBtn = document.getElementById('dec-btn');
+  const incBtn = document.getElementById('inc-btn');
+  const qTotal = document.getElementById('qty-total');
+  const confirmBtn = document.getElementById('confirm-qty');
+  const changeBtn  = document.getElementById('change-qty');
+
+  const grid   = document.getElementById('seat-grid');
+  const hidden = document.getElementById('seats');
+  const selCnt = document.getElementById('sel-count');
+  const sumTot = document.getElementById('sum-total');
+  const reqEl  = document.getElementById('req');
+  const remEl  = document.getElementById('rem');
+  const goBtn  = document.getElementById('go');
+
+  // ----- Datos -----
+  const precio = parseFloat('{{ precio_entrada }}') || 0;
+  const maxSel = parseInt(grid.dataset.max || '6', 10);
+  let target = 1;
+  let selected = [];
+
+  // ----- Helpers -----
+  const fmt = n => new Intl.NumberFormat('es-AR').format(n);
+  function setSeatButtonsEnabled(enabled){
+    grid.querySelectorAll('.seat-available').forEach(b => { b.disabled = !enabled; });
+  }
+  function updateQtyUI(){
+    const v = parseInt(qInput.value,10) || 1;
+    decBtn.disabled = v <= 1;
+    incBtn.disabled = v >= maxSel;
+    qTotal.textContent = `$${fmt(v * precio)}`;
+  }
+  function updateSelUI(){
+    selCnt.textContent = selected.length;
+    sumTot.textContent = `$${fmt(selected.length * precio)}`;
+    reqEl.textContent  = target;
+    remEl.textContent  = Math.max(0, target - selected.length);
+    goBtn.disabled     = (selected.length !== target);
+  }
+
+  // ----- Modal flujo -----
+  function openModal(){
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    hero.setAttribute('aria-hidden','true');
+    room.setAttribute('aria-hidden','true');
+    setSeatButtonsEnabled(false);
+  }
+  function closeModal(){
+    modal.style.opacity = '0';
+    setTimeout(()=>{ modal.style.display = 'none'; }, 220);
+    hero.removeAttribute('aria-hidden');
+    room.removeAttribute('aria-hidden');
+  }
+
+  // Inicial
+  openModal();
+  updateQtyUI();
+
+  // Cantidad
+  decBtn.addEventListener('click', () => {
+    let v = Math.max(1, (parseInt(qInput.value,10) || 1) - 1);
+    qInput.value = v; updateQtyUI();
+  });
+  incBtn.addEventListener('click', () => {
+    let v = Math.min(maxSel, (parseInt(qInput.value,10) || 1) + 1);
+    qInput.value = v; updateQtyUI();
+  });
+
+  // Confirmar cantidad
+  confirmBtn.addEventListener('click', () => {
+    target = parseInt(qInput.value,10) || 1;
+    selected = []; hidden.value = '';
+    setSeatButtonsEnabled(true);
+    updateSelUI();
+    closeModal();
+  });
+
+  // Cambiar cantidad
+  changeBtn.addEventListener('click', () => {
+    grid.querySelectorAll('.seat-selected').forEach(b=>{
+      b.classList.remove('seat-selected'); b.classList.add('seat-available'); b.setAttribute('aria-pressed','false');
+    });
+    selected = []; hidden.value = ''; updateSelUI();
+    setSeatButtonsEnabled(false);
+    openModal();
+  });
+
+  // Selección de asientos
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.seat-btn');
+    if(!btn || btn.classList.contains('seat-taken') || btn.disabled) return;
+    const code = btn.dataset.seat;
+    const i = selected.indexOf(code);
+    if(i >= 0){
+      selected.splice(i,1);
+      btn.classList.remove('seat-selected'); btn.classList.add('seat-available'); btn.setAttribute('aria-pressed','false');
+    } else {
+      if(selected.length >= target){
+        btn.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:150});
+        return;
+      }
+      selected.push(code);
+      btn.classList.remove('seat-available'); btn.classList.add('seat-selected'); btn.setAttribute('aria-pressed','true');
+    }
+    hidden.value = selected.join(',');
+    updateSelUI();
+  });
+
+  // Validación envío
+  document.getElementById('seat-form').addEventListener('submit', (e)=>{
+    if(selected.length !== target){
+      e.preventDefault();
+      alert(`Debés seleccionar exactamente ${target} asiento(s).`);
+    }
+  });
+
+  // Atajos teclado en modal
+  window.addEventListener('keydown',(ev)=>{
+    if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if(modal.style.display !== 'none'){
+      if(ev.key==='ArrowLeft') decBtn.click();
+      if(ev.key==='ArrowRight') incBtn.click();
+    }
+  });
+})();
+</script>
+{% endblock %}
+

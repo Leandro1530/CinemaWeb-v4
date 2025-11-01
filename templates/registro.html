@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Registro de usuario | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+/* ===== Registro moderno Cinema3D ===== */
+.register-wrap {
+  max-width: 880px;
+  margin-inline: auto;
+  padding: clamp(16px,3vw,32px);
+}
+
+.reg-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  backdrop-filter: blur(16px);
+  padding: clamp(20px,2vw,28px);
+}
+
+.reg-header {
+  text-align: center;
+  margin-bottom: clamp(18px,2.5vw,28px);
+}
+
+.reg-header h1 {
+  font-size: clamp(1.6rem,2.4vw,2rem);
+  font-weight: 800;
+  margin: 0;
+}
+
+.reg-header p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+input, select {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: .95rem;
+  transition: all .2s ease;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #4f6df5;
+  box-shadow: 0 0 0 3px rgba(79,109,245,.2);
+  background: rgba(255,255,255,.08);
+}
+
+.msg {
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 1rem;
+  font-size: .95rem;
+}
+
+.msg.err {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.3);
+  color: #fca5a5;
+}
+
+.msg.ok {
+  background: rgba(34,197,94,.1);
+  border: 1px solid rgba(34,197,94,.3);
+  color: #86efac;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg,#4f6df5,#7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .8rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .25s, box-shadow .25s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,.3);
+}
+
+.btn-link {
+  color: #9fb1ff;
+  text-decoration: none;
+  font-size: .9rem;
+  margin-top: 8px;
+}
+
+.btn-link:hover { text-decoration: underline; }
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.hint {
+  color: #9ca3af;
+  font-size: .8rem;
+}
+
+@media(max-width:768px){
+  .actions { flex-direction: column; align-items: stretch; }
+  .btn-primary, .btn-link { width: 100%; text-align: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container register-wrap">
+  <div class="reg-card">
+    <div class="reg-header">
+      <h1>Registro de Usuario</h1>
+      <p>Completá tus datos para crear tu cuenta</p>
+    </div>
+
+    {% if errores %}
+      <div class="msg err">
+        <ul style="margin:0; padding-left:18px;">
+          {% for e in errores %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if exito %}
+      <div class="msg ok">{{ exito }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('auth.registro') }}" novalidate class="form-grid">
+      <div class="form-group">
+        <label for="nombre">Nombre *</label>
+        <input id="nombre" name="nombre" type="text" required minlength="2" maxlength="40"
+               value="{{ data.nombre if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="apellido">Apellido *</label>
+        <input id="apellido" name="apellido" type="text" required minlength="2" maxlength="40"
+               value="{{ data.apellido if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="tipo_documento">Tipo documento *</label>
+        {% set td = data.tipo_documento if data else '' %}
+        <select id="tipo_documento" name="tipo_documento" required>
+          <option value="">Selecciona...</option>
+          <option value="DNI"  {{ 'selected' if td=='DNI' else '' }}>DNI</option>
+          <option value="CI"   {{ 'selected' if td=='CI'  else '' }}>CI</option>
+          <option value="LE"   {{ 'selected' if td=='LE'  else '' }}>LE</option>
+          <option value="LC"   {{ 'selected' if td=='LC'  else '' }}>LC</option>
+          <option value="PASS" {{ 'selected' if td=='PASS' else '' }}>Pasaporte</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="nro_documento">Nro documento (8 dígitos) *</label>
+        <input id="nro_documento" name="nro_documento" type="text" inputmode="numeric"
+               minlength="8" maxlength="8" pattern="^\d{8}$" required
+               value="{{ data.nro_documento if data else '' }}">
+        <span class="hint">Solo números, 8 dígitos</span>
+      </div>
+
+      <div class="form-group">
+        <label for="contrasena">Contraseña *</label>
+        <input id="contrasena" name="contrasena" type="password" required minlength="6" maxlength="64">
+        <span class="hint">Mínimo 6 caracteres</span>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" maxlength="80"
+               value="{{ data.email if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="telefono">Teléfono</label>
+        <input id="telefono" name="telefono" type="tel" maxlength="20"
+               value="{{ data.telefono if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="codigo_postal">Código postal</label>
+        <input id="codigo_postal" name="codigo_postal" type="text" maxlength="8"
+               pattern="^[A-Za-z0-9]{4,8}$"
+               value="{{ data.codigo_postal if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="direccion">Dirección</label>
+        <input id="direccion" name="direccion" type="text" maxlength="80"
+               value="{{ data.direccion if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="ciudad">Ciudad</label>
+        <input id="ciudad" name="ciudad" type="text" maxlength="60"
+               value="{{ data.ciudad if data else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="provincia">Provincia</label>
+        <input id="provincia" name="provincia" type="text" maxlength="60"
+               value="{{ data.provincia if data else '' }}">
+      </div>
+
+      <div class="actions">
+        <a href="{{ url_for('venta.cartelera') }}" class="btn-link">← Volver</a>
+        <button type="submit" class="btn-primary">Registrar</button>
+      </div>
+
+      {% set mostrar_boton_asientos = mostrar_boton_asientos if mostrar_boton_asientos is defined else (session.seats is defined and session.seats) %}
+      {% if mostrar_boton_asientos %}
+      <div style="grid-column:1/-1; text-align:center; margin-top:1rem;">
+        <a href="{{ url_for('venta.reserva_asientos') }}" class="btn-primary">
+          Ir a reserva de asientos
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<script>
+const form = document.querySelector("form");
+form.addEventListener("submit", (e)=>{
+  const dni=document.getElementById("nro_documento");
+  if(dni && !/^\d{8}$/.test(dni.value.trim())){
+    dni.setCustomValidity("El DNI debe tener exactamente 8 dígitos numéricos.");
+  } else { dni.setCustomValidity(""); }
+  if(!form.checkValidity()){ e.preventDefault(); form.reportValidity(); }
+});
+</script>
+{% endblock %}

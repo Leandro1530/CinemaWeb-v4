@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Pago aprobado | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Pago OK: estilo moderno y coherente ===== */
+  .ok-wrap { max-width: 960px; margin-inline:auto; padding: clamp(16px,2.8vw,32px); }
+  .ok-header{ text-align:center; margin-bottom: clamp(18px,3vw,26px); }
+  .ok-icon{
+    width:74px; height:74px; margin:0 auto 10px;
+    display:grid; place-items:center;
+    border-radius:20px; color:#22c55e;
+    background:rgba(34,197,94,.10);
+    border:1px solid rgba(34,197,94,.35);
+    box-shadow:0 10px 30px rgba(34,197,94,.2);
+    font-size:2rem;
+  }
+  .ok-header h1{ font-size: clamp(1.6rem,2.3vw,2rem); font-weight:800; margin:0; }
+  .ok-header p{ color:var(--muted); margin:0; }
+
+  .ok-card{
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius:16px;
+    box-shadow:0 10px 40px rgba(0,0,0,.3);
+    backdrop-filter: blur(20px);
+    padding: clamp(18px,2vw,28px);
+  }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .muted{ color: var(--muted); }
+
+  .section{ margin-top: 20px; padding-top: 14px; border-top:1px solid rgba(255,255,255,.08); }
+  .section h2{ margin:0 0 6px; font-size:1.1rem; font-weight:700; color:#cbd5ff; }
+
+  table{ width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td{ border-bottom:1px solid rgba(255,255,255,.08); padding:8px 10px; text-align:left; vertical-align:top; }
+  th{ color:#9fb1ff; font-weight:700; }
+  td.right, th.right{ text-align:right; }
+  tfoot td{ border-bottom:none; padding-top:10px; }
+
+  .actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:22px; }
+  .btn{
+    padding:10px 14px; border-radius:10px;
+    text-decoration:none; font-weight:700;
+    background:linear-gradient(135deg,#4f6df5,#7c3aed);
+    color:#fff; transition:transform .25s,box-shadow .25s;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.3); }
+
+  @media(max-width:768px){
+    .grid2{ grid-template-columns:1fr; }
+    th,td{ font-size:.92rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container ok-wrap">
+  <div class="ok-header">
+    <div class="ok-icon">✅</div>
+    <h1>Pago aprobado</h1>
+    <p>Tu transacción se procesó correctamente</p>
+  </div>
+
+  <section class="ok-card">
+    <!-- Datos del pago -->
+    <div class="grid2">
+      <div><strong>Transacción:</strong></div><div class="mono">#{{ trx_id }}</div>
+      <div><strong>Monto pagado:</strong></div><div class="mono">${{ "%.0f"|format(total) }}</div>
+      <div><strong>Tarjeta:</strong></div><div>{{ brand }} **** {{ last4 }}</div>
+      <div><strong>Fecha:</strong></div><div class="mono">{{ fecha }}</div>
+      <div><strong>Autorización:</strong></div><div class="mono">{{ auth_code }}</div>
+      <div><strong>Código de compra:</strong></div><div class="mono">{{ codigo_compra }}</div>
+    </div>
+
+    <!-- Función -->
+    <div class="section">
+      <h2>Función</h2>
+      <div class="grid2">
+        <div><strong>Película:</strong></div>
+        <div class="mono">{{ seleccion.titulo if seleccion and seleccion.titulo else '—' }}</div>
+
+        <div><strong>Fecha/Hora:</strong></div>
+        <div class="mono">
+          {% if seleccion and seleccion.fecha and seleccion.hora %}
+            {{ seleccion.fecha }} {{ seleccion.hora }}
+          {% else %}—{% endif %}
+        </div>
+
+        <div><strong>Sala:</strong></div>
+        <div class="mono">{{ seleccion.sala if seleccion and seleccion.sala else '—' }}</div>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <div class="section">
+      <h2>Detalle de la compra</h2>
+
+      <div class="grid2" style="margin-bottom:12px;">
+        <div><strong>Asientos:</strong></div>
+        <div class="mono">
+          {% if seats and seats|length>0 %}{{ seats|join(', ') }}{% else %}—{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <strong>Combos:</strong>
+        {% if combos_detalle and combos_detalle|length>0 %}
+          <table aria-label="Detalle de combos">
+            <thead>
+              <tr>
+                <th>Combo</th>
+                <th>Descripción</th>
+                <th class="right">Precio unit.</th>
+                <th class="right">Cant.</th>
+                <th class="right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in combos_detalle %}
+              <tr>
+                <td>{{ c.nombre }}</td>
+                <td class="muted">{{ c.descripcion }}</td>
+                <td class="right mono">$ {{ c.precio }}</td>
+                <td class="right mono">1</td>
+                <td class="right mono">$ {{ c.precio }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" class="right"><strong>Subtotal combos:</strong></td>
+                <td class="right mono"><strong>$ {{ combos_subtotal }}</strong></td>
+              </tr>
+              <tr>
+                <td colspan="4" class="right">Total pagado:</td>
+                <td class="right mono">${{ "%.0f"|format(total) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        {% else %}
+          <div class="mono">—</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="actions">
+      <a class="btn" href="{{ comprobante_url }}" download="comprobante_{{ trx_id }}.pdf">Descargar comprobante</a>
+      <a class="btn" href="{{ url_for('main.bienvenida') }}">Volver al inicio</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Pago con Mercado Pago | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Pago con MercadoPago: estilo glass moderno ===== */
+  .mp-wrap { max-width: 960px; margin-inline: auto; padding: clamp(16px,2.8vw,32px); }
+  .mp-header { text-align:center; margin-bottom: clamp(18px,3vw,26px); }
+  .mp-header h1 { font-size: clamp(1.6rem,2.2vw,2rem); font-weight: 800; margin: 0 0 .25rem; }
+  .mp-header p { color: var(--muted); margin: 0; }
+
+  .mp-card{
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    backdrop-filter: blur(16px);
+    padding: clamp(18px,2vw,28px);
+    margin-bottom: 24px;
+  }
+
+  .mp-subtitle{ color:#9fb1ff; font-weight:700; margin:0 0 8px; }
+
+  .amount-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 0; color: var(--muted);
+  }
+  .amount-row.total{
+    border-top:1px solid rgba(79,109,245,.35);
+    margin-top:10px; padding-top:10px;
+    font-size:1.3rem; font-weight:800;
+    color:#22c55e;
+  }
+
+  .wallet-container{ margin-top:20px; }
+
+  .btn-mp{
+    width:100%; border:none;
+    background: linear-gradient(135deg,#00b4d8,#0077b6);
+    color:#fff; border-radius:10px;
+    padding:.85rem 1.2rem;
+    font-weight:700; font-size:1rem;
+    transition:all .25s ease;
+    margin-top:10px;
+  }
+  .btn-mp:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,180,216,.3); }
+
+  .methods-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px; margin-top:10px;
+  }
+  .method-card{
+    text-align:center; padding:12px;
+    border-radius:12px; border:1px solid rgba(79,109,245,.25);
+    background: rgba(255,255,255,.04);
+  }
+  .method-icon{ font-size:1.8rem; margin-bottom:4px; }
+  .method-title{ color: var(--text); font-weight:600; font-size:.92rem; }
+
+  .actions{ text-align:center; margin-top:18px; }
+  .actions .btn-ghost{ margin-inline:8px; }
+
+  @media (max-width:768px){
+    .mp-wrap{ padding:1rem; }
+    .methods-grid{ grid-template-columns:1fr; }
+  }
+</style>
+
+<!-- SDK de Mercado Pago -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-container mp-wrap">
+  <div class="mp-header">
+    <h1>💳 Mercado Pago</h1>
+    <p>Pago seguro y fácil con tus medios preferidos</p>
+  </div>
+
+  <!-- Resumen de compra -->
+  <section class="mp-card">
+    <h3 class="mp-subtitle">Resumen de tu compra</h3>
+    <p style="color:var(--muted); margin-bottom:.8rem;">
+      <strong style="color:var(--text)">{{ seleccion.titulo or 'Película seleccionada' }}</strong><br>
+      {{ seleccion.fecha or 'Fecha' }} · {{ seleccion.hora or 'Hora' }} · Sala {{ seleccion.sala or '1' }}<br>
+      Asientos: {{ seats|join(', ') if seats else 'Sin asientos' }}
+    </p>
+
+    {% if combos %}
+    <div style="color:var(--muted); margin-bottom:.5rem;">
+      <strong>Combos:</strong><br>
+      {% for combo in combos %}
+        • {{ combo.nombre }} — ${{ "%.2f"|format(combo.precio) }}<br>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div>
+      <div class="amount-row">
+        <span>Entradas ({{ seats|length if seats else 0 }})</span>
+        <span>${{ "%.2f"|format(total_entradas) if total_entradas else "0.00" }}</span>
+      </div>
+      {% if total_combos and total_combos > 0 %}
+      <div class="amount-row">
+        <span>Combos</span>
+        <span>${{ "%.2f"|format(total_combos) }}</span>
+      </div>
+      {% endif %}
+      <div class="amount-row total">
+        <span>Total a pagar</span>
+        <span>${{ "%.2f"|format(total) if total else "0.00" }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Métodos disponibles -->
+  <section class="mp-card">
+    <h3 class="mp-subtitle" style="text-align:center;">Métodos de pago</h3>
+    <div class="methods-grid">
+      <div class="method-card"><div class="method-icon">💳</div><div class="method-title">Tarjetas</div></div>
+      <div class="method-card"><div class="method-icon">💰</div><div class="method-title">Efectivo</div></div>
+      <div class="method-card"><div class="method-icon">🏦</div><div class="method-title">Transferencia</div></div>
+      <div class="method-card"><div class="method-icon">📱</div><div class="method-title">Billeteras</div></div>
+    </div>
+
+    <!-- Botón dinámico de MercadoPago -->
+    <div id="wallet_container" class="wallet-container"></div>
+
+    <!-- Fallback si falla el SDK -->
+    <div id="fallback-button" style="display:none;">
+      <button class="btn-mp" onclick="window.open('https://www.mercadopago.com', '_blank')">
+        Continuar en MercadoPago
+      </button>
+    </div>
+  </section>
+
+  <!-- Navegación -->
+  <div class="actions">
+    <a href="{{ url_for('pago.pago') }}" class="btn-ghost">← Volver</a>
+    <a href="{{ url_for('main.bienvenida') }}" class="btn-ghost">Ir al inicio</a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const publicKey = '{{ public_key }}';
+  const preferenceId = '{{ preference_id }}';
+  if (!publicKey || !preferenceId) {
+    console.error('Faltan credenciales de MercadoPago');
+    document.getElementById('fallback-button').style.display = 'block';
+    return;
+  }
+  try {
+    const mp = new MercadoPago(publicKey, { locale: 'es-AR' });
+    mp.checkout({
+      preference: { id: preferenceId },
+      render: {
+        container: '#wallet_container',
+        label: 'Pagar con Mercado Pago'
+      },
+      theme: {
+        elementsColor: '#00b4d8',
+        headerColor: '#00b4d8'
+      }
+    });
+  } catch (e) {
+    console.error('Error iniciando MercadoPago:', e);
+    document.getElementById('fallback-button').style.display = 'block';
+  }
+});
+</script>
+{% endblock %}

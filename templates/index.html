@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Inicio | Cinema3D{% endblock %}
+
+{% block content %}
+<div class="page-container">
+  <!-- Hero -->
+  <section class="hero card">
+    <div class="hstack" style="gap:10px; align-items:center;">
+      <div class="bienvenida-icono" aria-hidden="true">
+        <svg width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="20" y="4" rx="4" fill="#4f6df5"/>
+          <circle cx="14" cy="14" r="4" fill="#fff"/>
+        </svg>
+      </div>
+      <div>
+        <h1 style="margin:0;">Bienvenido a <strong>Cinema3D</strong></h1>
+        <p style="margin:.25rem 0 0; color:var(--muted);">
+          Elegí tu sucursal para ver la cartelera y comprar tus entradas.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selección de sucursal -->
+  <section>
+    <div class="card form-card">
+      <form method="post" class="vstack" autocomplete="off" style="gap:12px;">
+        <label class="bienvenida-label" for="sucursal" style="color:var(--muted);">Seleccioná una sucursal</label>
+
+        <div class="bienvenida-select-row custom-select-wrapper" style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="custom-select-container" style="min-width:260px; flex:1;">
+            <select id="sucursal" name="sucursal" class="bienvenida-select custom-select" required>
+              <option value="">Elige una sucursal</option>
+              {% for s in sucursales %}
+                <option value="{{ s }}" {{ 'selected' if sucursal_seleccionada == s else '' }}>
+                  {{ s }}
+                </option>
+              {% endfor %}
+            </select>
+            <span class="custom-select-arrow"></span>
+          </div>
+
+          <button type="submit" class="btn-primary">Seleccionar</button>
+        </div>
+
+        {% if sucursal_seleccionada %}
+        <div class="hstack" style="gap:10px; align-items:center; flex-wrap:wrap;">
+          <div>
+            <span style="font-size:1.05rem; color:#b3b3b3;">Sucursal seleccionada:</span>
+            <strong style="color:var(--text)">{{ sucursal_seleccionada }}</strong>
+          </div>
+          <button name="quitar" value="1" class="btn-secondary" type="submit">Quitar selección</button>
+        </div>
+        {% endif %}
+
+        <div class="actions" style="margin-top:6px;">
+          <a href="/cartelera" class="btn-primary">Ver cartelera</a>
+          <a href="/registro" class="btn-ghost">Registrar usuario</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

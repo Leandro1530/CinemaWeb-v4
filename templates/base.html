@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>{% block title %}{{ title or "CINEMA3D" }}{% endblock %}</title>
+
+  <!-- CSS existentes -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+  {% block head_extras %}{% endblock %}
+
+  <!-- (opcional) modern-ui si lo usás -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modern-ui.css') }}">
+
+  <!-- THEME FINAL (debe ir último) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=9999">
+
+  <!-- OVERRIDE: altura del spacer del navbar (reduce el “aire” arriba) -->
+  <style>
+    /* El navbar fijo usa un div .yx-nav-spacer. Acá forzamos su altura global. */
+    .yx-nav-spacer{
+      height: 68px;                /* antes 96px: más compacto */
+      transition: height .2s ease; /* suave si cambia por responsive */
+    }
+    @media (max-width: 768px){
+      .yx-nav-spacer{ height: 74px; } /* un poquito más alto en móvil */
+    }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#content">Saltar al contenido</a>
+
+  <header class="site-header">
+    {% include "_partials/navbar.html" ignore missing %}
+  </header>
+
+  <main id="content" class="page-container yx-section">
+    <div class="yx-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack" role="status" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category|lower }}">
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="footer yx-footer">
+    <div class="yx-container">
+      <div>© {{ (now or none) and now.year or 2025 }} CINEMA3D LA RIOJA</div>
+      <nav class="hstack">
+        <a href="{{ url_for('main.bienvenida') }}">Inicio</a>
+        <a href="{{ url_for('venta.cartelera') }}">Cartelera</a>
+        {% if is_admin() %}<a href="{{ url_for('admin.dashboard') }}">Admin</a>{% endif %}
+      </nav>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/modern-ui.js') }}"></script>
+</body>
+</html>

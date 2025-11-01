@@ -1,0 +1,27 @@
+# VERIFICAR EN PUTTY - Estado del nuevo sistema
+
+# 1. Conectar al servidor
+ssh root@31.97.174.96
+
+# 2. Verificar que los archivos están actualizados
+cd /var/www/cinema
+ls -la app/blueprints/pago_mp.py
+head -5 app/blueprints/pago_mp.py
+
+# 3. Verificar configuración de rutas en __init__.py
+grep -A5 -B5 'pago' app/__init__.py
+
+# 4. Ver logs del servicio
+sudo journalctl -u cinema --no-pager -n 20
+
+# 5. Probar la ruta directamente
+curl -I http://localhost/pago
+
+# 6. Ver qué blueprint está manejando /pago
+python3 -c "
+from app import create_app
+app = create_app()
+for rule in app.url_map.iter_rules():
+    if 'pago' in str(rule):
+        print(f'{rule} -> {rule.endpoint}')
+"

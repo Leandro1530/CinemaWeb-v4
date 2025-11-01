@@ -1,0 +1,165 @@
+{% extends "admin_base.html" %}
+{% block title %}{% if funcion %}Editar Función{% else %}Nueva Función{% endif %} - Admin Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  .admin-form-wrap{
+    max-width:900px; margin-inline:auto; background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.35);
+    backdrop-filter:blur(16px); padding:clamp(16px,3vw,32px);
+  }
+  .form-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .form-header h1{ margin:0; font-size:clamp(1.4rem,2.2vw,1.8rem); font-weight:800; }
+  .btn-secondary{ border:1px solid rgba(255,255,255,.2); color:#9ca3af; text-decoration:none; padding:.7rem 1.2rem; border-radius:10px; transition:all .2s; }
+  .btn-secondary:hover{ background:rgba(255,255,255,.1); color:#fff; }
+
+  .form-grid{ display:grid; gap:1.2rem; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-top:1rem; }
+  label{ color:#e5e7eb; font-weight:600; font-size:.9rem; margin-bottom:.3rem; display:block; }
+  input,select,textarea{
+    width:100%; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05);
+    border-radius:8px; padding:.75rem; color:#fff; font-size:.95rem; transition:all .2s;
+  }
+  input:focus,select:focus,textarea:focus{ border-color:#4f6df5; box-shadow:0 0 0 2px rgba(79,109,245,.15); outline:none; }
+  textarea{ resize:vertical; min-height:90px; }
+
+  .alert{ padding:.9rem 1rem; border-radius:10px; margin-bottom:1rem; }
+  .alert-success{ background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#86efac; }
+
+  .help-text{ font-size:.8rem; color:#9ca3af; margin-top:.3rem; }
+  .actions{ display:flex; gap:1rem; justify-content:flex-end; flex-wrap:wrap; margin-top:1.5rem; }
+  .btn-primary{
+    background:linear-gradient(135deg,#4f6df5,#7c3aed); color:#fff; border:none; padding:.8rem 1.3rem;
+    border-radius:10px; font-weight:700; cursor:pointer; transition:transform .2s,box-shadow .2s;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.3); }
+  .btn-danger{ background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border:none; padding:.8rem 1.3rem; border-radius:10px; font-weight:700; cursor:pointer; }
+  .btn-danger:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(239,68,68,.35); }
+
+  .movie-preview{ margin-top:1.5rem; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:1.3rem; }
+  .preview-content{ display:grid; gap:1rem; grid-template-columns:auto 1fr; align-items:flex-start; }
+  .preview-poster{ width:110px; height:160px; border-radius:8px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); display:flex; align-items:center; justify-content:center; font-size:2rem; color:#fff; }
+  .preview-poster img{ width:100%; height:100%; object-fit:cover; border-radius:8px; }
+  .preview-title{ margin:0; font-weight:700; font-size:1.1rem; }
+  .preview-details{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.4rem; margin:.5rem 0; }
+  .preview-details div{ font-size:.9rem; color:#9ca3af; }
+  .preview-description{ font-size:.9rem; color:#9ca3af; }
+
+  @media(max-width:768px){ .preview-content{ grid-template-columns:1fr; text-align:center; } .actions{ flex-direction:column; align-items:stretch; } }
+</style>
+{% endblock %}
+
+{% block admin_actions %}
+  <a href="{{ url_for('admin.funciones') }}" class="btn-secondary">← Volver</a>
+{% endblock %}
+
+{% block admin_content %}
+<section class="admin-form-wrap">
+  <div class="form-header"><h1>{% if funcion %}Editar Función{% else %}Nueva Función{% endif %}</h1></div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}{% for message in messages %}<div class="alert alert-success">{{ message }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+
+  <form method="POST" id="functionForm">
+    <div class="form-grid">
+      <div><label for="titulo">Título *</label><input id="titulo" name="titulo" type="text" required value="{{ funcion.titulo if funcion else '' }}" placeholder="Nombre de la película" onchange="updatePreview()"></div>
+      <div>
+        <label for="genero">Género *</label>
+        <select id="genero" name="genero" required onchange="updatePreview()">
+          <option value="">Seleccionar</option>
+          {% for g in ['Acción','Drama','Comedia','Ciencia Ficción','Terror','Aventura','Romance','Thriller','Animación','Documental'] %}
+            <option value="{{ g }}" {% if funcion and funcion.genero==g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><label for="duracion">Duración (min) *</label><input id="duracion" name="duracion" type="number" min="60" max="300" required value="{{ funcion.duracion if funcion else '' }}" placeholder="120" onchange="updatePreview()"><div class="help-text">Entre 60 y 300 minutos</div></div>
+      <div>
+        <label for="clasificacion">Clasificación *</label>
+        <select id="clasificacion" name="clasificacion" required>
+          <option value="">Seleccionar</option>
+          {% for c in ['G','PG','PG-13','R','NC-17'] %}
+            <option value="{{ c }}" {% if funcion and funcion.clasificacion==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><label for="fecha">Fecha *</label><input id="fecha" name="fecha" type="date" required value="{{ funcion.fecha if funcion else '' }}" onchange="updatePreview()"></div>
+      <div><label for="hora">Hora *</label><input id="hora" name="hora" type="time" required value="{{ funcion.hora if funcion else '' }}" onchange="updatePreview()"></div>
+      <div>
+        <label for="sala">Sala *</label>
+        <select id="sala" name="sala" required onchange="updatePreview()">
+          <option value="">Seleccionar sala</option>
+          {% for s in ['Sala 1','Sala 2','Sala 3','Sala VIP'] %}
+            <option value="{{ s }}" {% if funcion and funcion.sala==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><label for="precio">Precio ($) *</label><input id="precio" name="precio" type="number" min="5000" max="50000" step="1000" required value="{{ funcion.precio if funcion else '' }}" placeholder="12000" onchange="updatePreview()"></div>
+    </div>
+
+    <div><label for="poster">URL del Poster</label><input id="poster" name="poster" type="url" value="{{ funcion.poster if funcion else '' }}" placeholder="https://ejemplo.com/poster.jpg" onchange="updatePreview()"></div>
+    <div><label for="descripcion">Sinopsis</label><textarea id="descripcion" name="descripcion" placeholder="Breve descripción..." onchange="updatePreview()">{{ funcion.descripcion if funcion else '' }}</textarea></div>
+
+    <div class="movie-preview" id="moviePreview" style="display:none;">
+      <h3>Vista previa</h3>
+      <div class="preview-content">
+        <div class="preview-poster" id="previewPoster">🎬</div>
+        <div>
+          <h4 class="preview-title" id="previewTitle">Título de la película</h4>
+          <div class="preview-details">
+            <div><strong>Género:</strong> <span id="previewGenero">-</span></div>
+            <div><strong>Duración:</strong> <span id="previewDuracion">-</span></div>
+            <div><strong>Fecha:</strong> <span id="previewFecha">-</span></div>
+            <div><strong>Hora:</strong> <span id="previewHora">-</span></div>
+            <div><strong>Sala:</strong> <span id="previewSala">-</span></div>
+            <div><strong>Precio:</strong> $<span id="previewPrecio">-</span></div>
+          </div>
+          <div class="preview-description" id="previewDescripcion">Sin descripción disponible.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      {% if funcion %}<button type="button" class="btn-danger" onclick="confirmDelete()">🗑️ Eliminar</button>{% endif %}
+      <button type="submit" class="btn-primary">{% if funcion %}💾 Actualizar{% else %}🎬 Crear{% endif %}</button>
+    </div>
+  </form>
+
+  {% if funcion %}
+    <form id="deleteForm" method="POST" action="{{ url_for('admin.eliminar_funcion', funcion_id=funcion.id) }}" style="display:none;"></form>
+  {% endif %}
+</section>
+
+<script>
+function updatePreview(){
+  const get=id=>document.getElementById(id)?.value||'';
+  const titulo=get('titulo'), genero=get('genero'), duracion=get('duracion'),
+        fecha=get('fecha'), hora=get('hora'), sala=get('sala'),
+        precio=get('precio'), poster=get('poster'), descripcion=get('descripcion');
+  const pv=document.getElementById('moviePreview');
+  if(titulo||genero||duracion){
+    pv.style.display='block';
+    document.getElementById('previewTitle').textContent=titulo||'Título';
+    document.getElementById('previewGenero').textContent=genero||'-';
+    document.getElementById('previewDuracion').textContent=duracion?duracion+' min':'-';
+    document.getElementById('previewFecha').textContent=fecha||'-';
+    document.getElementById('previewHora').textContent=hora||'-';
+    document.getElementById('previewSala').textContent=sala||'-';
+    document.getElementById('previewPrecio').textContent=precio?new Intl.NumberFormat('es-AR').format(precio):'-';
+    const p=document.getElementById('previewPoster');
+    if(poster){ p.innerHTML=`<img src="${poster}" alt="${titulo}" onerror="this.parentElement.innerHTML='🎬'">`; } else { p.textContent='🎬'; }
+  }else{
+    pv.style.display='none';
+  }
+}
+function confirmDelete(){
+  if(confirm('¿Eliminar esta función? Esta acción no se puede deshacer.')) document.getElementById('deleteForm').submit();
+}
+document.getElementById('functionForm').addEventListener('submit', e=>{
+  const f=document.getElementById('fecha').value; if(!f) return;
+  const fecha=new Date(f), hoy=new Date(); hoy.setHours(0,0,0,0);
+  if(fecha<hoy){ e.preventDefault(); alert('La fecha no puede ser anterior a hoy.'); }
+});
+document.addEventListener('DOMContentLoaded', updatePreview);
+</script>
+{% endblock %}
+

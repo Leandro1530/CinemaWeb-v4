@@ -1,0 +1,131 @@
+{% extends "admin_base.html" %}
+{% block title %}{% if usuario %}Editar Usuario{% else %}Nuevo Usuario{% endif %} - Admin Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  .admin-form-wrap{
+    max-width:900px;margin-inline:auto;background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.35);
+    backdrop-filter:blur(14px);padding:clamp(16px,2.5vw,32px);
+  }
+  .form-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  .form-header h1{margin:0;font-size:clamp(1.4rem,2vw,1.8rem);font-weight:800;}
+  .btn-secondary{border:1px solid rgba(255,255,255,.2);color:#9ca3af;text-decoration:none;padding:.7rem 1.3rem;border-radius:10px;transition:all .2s;}
+  .btn-secondary:hover{background:rgba(255,255,255,.1);color:#fff;}
+
+  .form-group{margin-bottom:1.2rem;}
+  label{display:block;color:#e5e7eb;font-weight:600;font-size:.9rem;margin-bottom:.4rem;}
+  input,select{
+    width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+    border-radius:8px;padding:.75rem;color:#fff;font-size:.95rem;transition:all .2s;
+  }
+  input:focus,select:focus{border-color:#4f6df5;box-shadow:0 0 0 2px rgba(79,109,245,.15);outline:none;}
+  .help-text{font-size:.8rem;color:#9ca3af;margin-top:.25rem;}
+
+  .alert{padding:.9rem 1rem;border-radius:10px;margin-bottom:1rem;}
+  .alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;}
+
+  .password-section{border-top:1px solid rgba(255,255,255,.1);padding-top:1.2rem;margin-top:1.4rem;}
+  .password-section h3{color:#e5e7eb;margin-bottom:1rem;font-size:1rem;font-weight:700;}
+  .checkbox-group{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;}
+  .checkbox{width:18px;height:18px;}
+  .checkbox-label{color:#e5e7eb;font-size:.9rem;cursor:pointer;}
+
+  .actions{display:flex;gap:1rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1.5rem;}
+  .btn-primary{background:linear-gradient(135deg,#4f6df5,#3b56e8);color:#fff;border:none;padding:.8rem 1.3rem;border-radius:10px;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(0,0,0,.3);}
+  .btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:.8rem 1.3rem;border-radius:10px;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;}
+  .btn-danger:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(239,68,68,.35);}
+
+  @media(max-width:640px){ .form-header{flex-direction:column;align-items:stretch;} .actions{flex-direction:column;align-items:stretch;} }
+</style>
+{% endblock %}
+
+{% block admin_actions %}
+  <a href="{{ url_for('admin.usuarios') }}" class="btn-secondary">← Volver</a>
+{% endblock %}
+
+{% block admin_content %}
+<section class="admin-form-wrap">
+  <div class="form-header"><h1>{% if usuario %}Editar Usuario{% else %}Nuevo Usuario{% endif %}</h1></div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}{% for message in messages %}<div class="alert alert-success">{{ message }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+
+  <form method="POST" id="userForm">
+    <div class="form-group">
+      <label for="email">Email *</label>
+      <input id="email" name="email" type="email" required value="{{ usuario.email if usuario else '' }}" placeholder="usuario@ejemplo.com">
+      <div class="help-text">El email se usa como nombre de usuario</div>
+    </div>
+
+    <div class="form-group">
+      <label for="nombre">Nombre</label>
+      <input id="nombre" name="nombre" type="text" value="{{ usuario.nombre if usuario else '' }}" placeholder="Nombre completo del usuario">
+    </div>
+
+    <div class="form-group">
+      <label for="rol">Rol *</label>
+      <select id="rol" name="rol" required>
+        <option value="usuario" {% if not usuario or usuario.rol == 'usuario' %}selected{% endif %}>Usuario</option>
+        <option value="admin" {% if usuario and usuario.rol == 'admin' %}selected{% endif %}>Administrador</option>
+      </select>
+      <div class="help-text">Los administradores pueden gestionar usuarios y funciones</div>
+    </div>
+
+    <div class="password-section">
+      <h3>{% if usuario %}Cambiar Contraseña{% else %}Contraseña{% endif %}</h3>
+      {% if usuario %}
+      <div class="checkbox-group">
+        <input type="checkbox" class="checkbox" id="change_password" onchange="togglePassword()">
+        <label for="change_password" class="checkbox-label">Cambiar contraseña</label>
+      </div>
+      {% endif %}
+
+      <div id="password-fields" {% if usuario %}style="display:none"{% endif %}>
+        <div class="form-group">
+          <label for="password">{% if usuario %}Nueva Contraseña{% else %}Contraseña *{% endif %}</label>
+          <input id="password" name="password" type="password" {% if not usuario %}required{% endif %} minlength="6" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirmar {% if usuario %}Nueva {% endif %}Contraseña</label>
+          <input id="confirm_password" name="confirm_password" type="password" {% if not usuario %}required{% endif %} placeholder="Repetir contraseña">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      {% if usuario and usuario.id != session.user_id %}
+        <button type="button" class="btn-danger" onclick="confirmDelete()">🗑️ Eliminar</button>
+      {% endif %}
+      <button type="submit" class="btn-primary">{% if usuario %}💾 Actualizar{% else %}➕ Crear{% endif %}</button>
+    </div>
+  </form>
+
+  {% if usuario and usuario.id != session.user_id %}
+    <form id="deleteForm" method="POST" action="{{ url_for('admin.eliminar_usuario', user_id=usuario.id) }}" style="display:none;"></form>
+  {% endif %}
+</section>
+
+<script>
+function togglePassword(){
+  const c=document.getElementById('change_password');
+  const fields=document.getElementById('password-fields');
+  const p=document.getElementById('password'), cp=document.getElementById('confirm_password');
+  if(c.checked){ fields.style.display='block'; p.required=true; cp.required=true; }
+  else{ fields.style.display='none'; p.required=false; cp.required=false; p.value=''; cp.value=''; }
+}
+function confirmDelete(){
+  if(confirm('¿Eliminar este usuario? Esta acción no se puede deshacer.')) document.getElementById('deleteForm').submit();
+}
+document.getElementById('userForm').addEventListener('submit', e=>{
+  const p=document.getElementById('password').value, cp=document.getElementById('confirm_password').value;
+  if(p && p!==cp){ e.preventDefault(); alert('Las contraseñas no coinciden.'); }
+});
+document.getElementById('confirm_password').addEventListener('input', function(){
+  const p=document.getElementById('password').value;
+  this.style.borderColor=(this.value && this.value!==p)?'#ef4444':'rgba(255,255,255,.1)';
+});
+</script>
+{% endblock %}

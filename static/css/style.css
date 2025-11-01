@@ -1,0 +1,1453 @@
+/* Reserva de asientos */
+.seats-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+.seat-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.seat-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.seat {
+  display: inline-block;
+  width: 38px;
+  height: 38px;
+  background: #232b4a;
+  color: #fff;
+  border-radius: 8px;
+  line-height: 38px;
+  text-align: center;
+  font-size: 1.1rem;
+  margin: 2px;
+  cursor: pointer;
+  border: 2px solid #4f6df5;
+  transition: background 0.2s, color 0.2s;
+}
+.seat-label input[type="checkbox"] {
+  display: none;
+}
+.seat-label input[type="checkbox"]:checked + .seat {
+  background: #4f6df5;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.seat.reserved {
+  background: #444a5e;
+  color: #b3b3b3;
+  border: 2px solid #888;
+  cursor: not-allowed;
+}
+/* Botón secundario y bloque para sucursales */
+.btn-secondary {
+  background: #232b4a;
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
+  margin-left: 0.7rem;
+  transition: background 0.2s;
+}
+.btn-secondary:hover {
+  background: #353e5e;
+}
+.btn-block {
+  width: 180px;
+  font-size: 1.1rem;
+  padding: 0.8rem 0;
+  text-align: center;
+  display: inline-block;
+}
+/* --- Bienvenida y Sucursales --- */
+.bienvenida-central {
+  max-width: 520px;
+  margin: 4.5rem auto 2rem auto;
+  padding: 3.2rem 2.5rem 2.7rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+}
+.bienvenida-icono {
+  background: #232b4a;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+}
+.bienvenida-titulo {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.bienvenida-label {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  display: block;
+  text-align: center;
+}
+.bienvenida-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+.bienvenida-select-row {
+  display: flex;
+  gap: 1.2rem;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.bienvenida-select {
+  width: 240px;
+  padding: 1.1rem 1.4rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.18rem;
+  background: #232b4a;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.10);
+  outline: none;
+  transition: border 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+.bienvenida-select:focus {
+  border: 2px solid #4f6df5;
+}
+.bienvenida-select option {
+  background: #232b4a;
+  color: #fff;
+  font-size: 1.1rem;
+}
+.btn, .btn-primary {
+  display: inline-block;
+  padding: 1.1rem 2.4rem;
+  border-radius: 12px;
+  border: none;
+  background: #4f6df5;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.18rem;
+  cursor: pointer;
+  text-decoration: none;
+  margin: 0.3rem;
+  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.12);
+  transition: background 0.2s, box-shadow 0.2s;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+.btn:hover, .btn-primary:hover {
+  background: #3b53c7;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.18);
+}
+.bienvenida-btn-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+/* --- Fin bienvenida --- */
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #181e36;
+  color: #fff;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  background: transparent;
+  pointer-events: none;
+  /* Estrellas */
+  background-image: 
+    radial-gradient(white 1px, transparent 1px),
+    radial-gradient(white 1px, transparent 1px),
+    radial-gradient(white 1px, transparent 1px);
+  background-size: 80px 80px, 120px 120px, 160px 160px;
+  background-position: 0 0, 40px 60px, 80px 120px;
+  opacity: 0.15;
+}
+
+.topbar {
+  background: transparent;
+  text-align: center;
+  padding: 2rem 0 1rem 0;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  justify-content: flex-start;
+  z-index: 1;
+  padding: 2rem 1rem;
+}
+
+.card, .card-central {
+  background: rgba(20, 24, 50, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 2rem 1.5rem;
+  margin: 1rem auto;
+  color: #fff;
+  position: relative;
+  z-index: 2;
+}
+
+.card {
+  width: 300px;
+  min-width: 300px;
+  flex-shrink: 0;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s;
+}
+.card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+}
+
+.poster {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.18);
+}
+
+.card-body h3 {
+  margin: 0.5rem 0 0.2rem 0;
+  font-size: 1.3rem;
+}
+.card-body .meta {
+  color: #b3b3b3;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+.card-body .sinopsis {
+  font-size: 1rem;
+  margin-bottom: 0.7rem;
+}
+.funciones ul {
+  padding-left: 1.2rem;
+  margin: 0.3rem 0 0 0;
+}
+.funciones li {
+  font-size: 0.97rem;
+  margin-bottom: 0.2rem;
+}
+
+.grid {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.btn, .btn-primary {
+  display: inline-block;
+  padding: 1rem 2.2rem;
+  border-radius: 10px;
+  border: none;
+  background: #4f6df5;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.15rem;
+  cursor: pointer;
+  text-decoration: none;
+  margin: 0.3rem;
+  box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.12);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.btn:hover, .btn-primary:hover {
+  background: #3b53c7;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.18);
+}
+
+.footer {
+  text-align: center;
+  color: #b3b3b3;
+  font-size: 0.95rem;
+  padding: 1.5rem 0 0.5rem 0;
+  z-index: 2;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .grid { 
+    gap: 1rem; 
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+  .card { 
+    width: 280px; 
+    min-width: 280px; 
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 600px) {
+  .container { padding: 0 0.5rem; }
+  .grid { 
+    gap: 0.75rem; 
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+  .card { 
+    width: 250px; 
+    min-width: 250px; 
+    flex-shrink: 0;
+    padding: 1rem 0.5rem; 
+  }
+}
+
+/* === CARTELERA HORIZONTAL LAYOUT === */
+.cartelera-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.cartelera-header .bienvenida-icono {
+  margin: 0 auto 1rem auto;
+}
+
+.movies-horizontal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.movie-horizontal-card {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.movie-horizontal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+}
+
+.movie-poster-section {
+  flex-shrink: 0;
+  width: 200px;
+}
+
+.movie-poster-horizontal {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.movie-info-section {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.movie-header {
+  margin-bottom: 1rem;
+}
+
+.movie-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+}
+
+.movie-meta {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.movie-sinopsis {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #e5e7eb;
+  margin: 0 0 1.5rem 0;
+  flex-grow: 1;
+}
+
+.movie-funciones strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.funciones-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-funcion {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #4f6df5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.btn-funcion:hover {
+  background: #3b56e8;
+}
+
+.cartelera-footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-bottom: 2rem;
+}
+
+/* Responsive para cartelera horizontal */
+@media (max-width: 768px) {
+  .movie-horizontal-card {
+    flex-direction: column;
+  }
+  
+  .movie-poster-section {
+    width: 100%;
+  }
+  
+  .movie-poster-horizontal {
+    height: 250px;
+  }
+  
+  .movie-info-section {
+    padding: 1rem 1.5rem;
+  }
+  
+  .funciones-grid {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .movies-horizontal-container {
+    padding: 0 1rem;
+  }
+  
+  .movie-info-section {
+    padding: 1rem;
+  }
+  
+  .movie-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* === RESERVA DE ASIENTOS === */
+.reserva-asientos-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(8px);
+  padding: 2rem;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.movie-info-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.movie-title-reserva {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #fff;
+}
+
+.movie-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.movie-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4f6df5;
+}
+
+.movie-session {
+  font-size: 1rem;
+  color: #9ca3af;
+}
+
+.seat-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0 2rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-items {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #e5e7eb;
+}
+
+.legend {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.legend-free { background: #0ea5e9; opacity: 0.6; }
+.legend-taken { background: #ef4444; opacity: 0.8; }
+.legend-selected { background: #22c55e; opacity: 0.9; }
+
+.max-seats {
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.cinema-screen {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.screen-line {
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #4f6df5, transparent);
+  margin: 0 auto 0.5rem;
+  border-radius: 1.5px;
+}
+
+.screen-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+#seat-grid {
+  --cols: 12;
+  display: grid;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.col-grid,
+.seat-row {
+  display: grid;
+  grid-template-columns: 40px repeat(var(--cols), 42px) 40px;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.col-grid {
+  margin-bottom: 12px;
+  grid-template-columns: 40px repeat(var(--cols), 42px) 40px;
+}
+
+.col-label, .row-label {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.seat {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 2px solid #1f2937;
+  background: #0b1222;
+  color: #e5e7eb;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.seat:hover:not(.taken) {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.seat.selected {
+  background: #22c55e;
+  border-color: #16a34a;
+  color: #032b12;
+  transform: scale(1.05);
+}
+
+.seat.taken {
+  background: #1f2937;
+  color: #6b7280;
+  border-color: #374151;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.reservation-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.selection-info {
+  flex: 1;
+}
+
+.seats-selected {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.seats-selected .label {
+  font-size: 1rem;
+  color: #e5e7eb;
+}
+
+.seats-selected .count {
+  background: #4f6df5;
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+
+.pricing-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.25rem;
+  backdrop-filter: blur(4px);
+}
+
+.price-row, .total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.price-row:last-child, .total-row:last-child {
+  margin-bottom: 0;
+}
+
+.price-row {
+  font-size: 0.95rem;
+  color: #9ca3af;
+}
+
+.price-row .price {
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.total-row {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.total-amount {
+  color: #22c55e;
+  font-size: 1.25rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+#continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive para reserva de asientos */
+@media (max-width: 768px) {
+  .reserva-asientos-card {
+    padding: 1.5rem;
+  }
+  
+  .reservation-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+  
+  .legend-items {
+    gap: 1rem;
+  }
+  
+  .seat-legend {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .col-grid,
+  .seat-row {
+    grid-template-columns: 30px repeat(var(--cols), 36px) 30px;
+    gap: 6px;
+  }
+  
+  .seat {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+  
+  .row-label, .col-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* === BOTÓN DE VOLVER FLOTANTE === */
+.back-button {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  outline: none;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+}
+
+.back-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Responsive para botón de volver */
+@media (max-width: 768px) {
+  .back-button {
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .back-button {
+    bottom: 0.5rem;
+    left: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+}
+
+/* === BOTONES EN ESQUINA SUPERIOR IZQUIERDA === */
+.top-left-buttons {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.top-left-buttons a {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 0 0.15rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.top-left-buttons a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+/* === MENU ADMIN CENTRADO === */
+.admin-menu-center {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.admin-menu-center a {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 0 0.15rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(147, 51, 234, 0.2);
+  color: #e5e7eb;
+  border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.admin-menu-center a:hover {
+  background: rgba(147, 51, 234, 0.3);
+  border-color: rgba(147, 51, 234, 0.5);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(147, 51, 234, 0.2);
+}
+
+.admin-badge {
+  background: linear-gradient(135deg, #9333ea, #7c3aed);
+  color: #fff;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* === BOTONES EN ESQUINA SUPERIOR DERECHA === */
+.top-right-buttons {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.top-right-buttons .btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 0 0.15rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.top-right-buttons .btn-outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.top-right-buttons .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+.top-right-buttons .btn-primary {
+  background: linear-gradient(135deg, #4f6df5, #3b56e8);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 16px rgba(79, 109, 245, 0.25);
+}
+
+.top-right-buttons .btn-primary:hover {
+  background: linear-gradient(135deg, #3b56e8, #2d47d9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(79, 109, 245, 0.35);
+}
+
+/* === NAVEGACIÓN NAVBAR === */
+.navbar {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  margin: 1rem auto 2rem auto;
+  max-width: 1200px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10;
+  width: calc(100% - 2rem);
+}
+
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 109, 245, 0.05) 0%, rgba(147, 51, 234, 0.03) 100%);
+  border-radius: 16px;
+  z-index: -1;
+}
+
+/* Sección izquierda - Enlaces principales */
+.navbar > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Sección centro - Admin (solo si existe) */
+.navbar .admin-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+/* Sección derecha - Botones de usuario POSICIONADOS ABSOLUTAMENTE */
+.navbar > div:last-child {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Enlaces principales del navbar (Inicio, Cartelera) */
+.navbar > div:first-child a {
+  color: #e5e7eb;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-right: 0.5rem;
+}
+
+.navbar > div:first-child a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.4s;
+}
+
+.navbar > div:first-child a:hover::before {
+  left: 100%;
+}
+
+.navbar > div:first-child a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Enlaces de la derecha del navbar */
+.navbar > div:last-child a {
+  margin-left: 0.5rem;
+}
+
+/* Texto de saludo */
+.navbar .meta {
+  color: #9ca3af;
+  font-size: 0.95rem;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Botones del navbar mejorados */
+.navbar .btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  margin: 0 0.25rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Botones en la esquina superior derecha más compactos */
+.navbar > div:last-child .btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  margin: 0 0.15rem;
+}
+
+.navbar .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.navbar .btn:hover::before {
+  left: 100%;
+}
+
+/* Botón outline específico del navbar */
+.navbar .btn-outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.navbar .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+/* Botón primary específico del navbar */
+.navbar .btn-primary {
+  background: linear-gradient(135deg, #4f6df5, #3b56e8);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 16px rgba(79, 109, 245, 0.25);
+}
+
+.navbar .btn-primary:hover {
+  background: linear-gradient(135deg, #3b56e8, #2d47d9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(79, 109, 245, 0.35);
+}
+
+/* Ajuste del texto meta en la esquina */
+.navbar > div:last-child .meta {
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
+
+/* Responsive para navbar */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .navbar > div:first-child {
+    order: 1;
+  }
+  
+  /* Botones en esquina superior izquierda - responsive */
+  .top-left-buttons {
+    top: 0.5rem;
+    left: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .top-left-buttons a {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Menu admin centrado - responsive */
+  .admin-menu-center {
+    top: 0.5rem;
+    padding: 0.5rem;
+    gap: 0.75rem;
+  }
+  
+  .admin-menu-center a {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Botones en esquina superior derecha - responsive */
+  .top-right-buttons {
+    top: 0.5rem;
+    right: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .top-right-buttons .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .admin-menu {
+    order: 3;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  
+  .navbar > div:first-child a {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .navbar .meta {
+    text-align: center;
+    margin: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    margin: 0.5rem auto 1.5rem auto;
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  /* Botones aún más compactos en móviles */
+  .navbar > div:last-child {
+    top: 0.25rem;
+    right: 0.25rem;
+    gap: 0.5rem;
+    padding: 0.4rem;
+  }
+  
+  .navbar > div:last-child .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .navbar > div:first-child a {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  /* En móvil, hacer los botones más compactos */
+  .navbar > div:first-child {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* === NAVEGACIÓN NAVBAR === */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4f6df5;
+  box-shadow: 0 0 0 3px rgba(79, 109, 245, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+.btn-outline {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Mejoras para card-central en login */
+.card-central {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-central::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(79, 109, 245, 0.08) 0%, rgba(147, 51, 234, 0.04) 100%);
+  border-radius: 20px;
+  z-index: -1;
+}
+
+/* Checkbox personalizado */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+  background: #4f6df5;
+  border-color: #4f6df5;
+}
+
+input[type="checkbox"]:checked::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Título con gradiente */
+.h2 {
+  background: linear-gradient(135deg, #fff, #e5e7eb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: -0.025em;
+}
+
+/* Links mejorados */
+a {
+  color: #4f6df5;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #6d8bff;
+}
+
+/* Mensajes de error con glassmorphism */
+.card .card-body {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.card .card-body ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #fca5a5;
+}

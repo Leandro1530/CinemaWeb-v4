@@ -1,0 +1,182 @@
+{% extends "admin_base.html" %}
+{% block title %}Gestionar Funciones - Admin Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  .functions-wrapper{
+    max-width:1400px;margin-inline:auto;background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);
+    backdrop-filter:blur(14px);padding:clamp(1rem,2vw,2rem);
+  }
+  .header-flex{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;}
+  .header-flex h1{margin:0;font-size:1.6rem;font-weight:800;}
+
+  .stats-summary{display:grid;gap:1rem;margin-bottom:1.5rem;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));}
+  .stat-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-align:center;padding:1rem;}
+  .stat-value{font-size:1.6rem;font-weight:700;color:#4f6df5;}
+  .stat-label{color:#9ca3af;font-size:.8rem;text-transform:uppercase;}
+
+  .filters{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;background:rgba(255,255,255,.02);border-radius:12px;padding:1rem;}
+  .search-input,.filter-select{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.65rem .9rem;color:#fff;font-size:.9rem;}
+  .search-input::placeholder{color:#9ca3af;}
+
+  .grid{display:grid;gap:1.2rem;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));}
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+  .card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.3);}
+  .card img{width:100%;height:200px;object-fit:cover;}
+  .card-info{padding:1rem 1.2rem;}
+  .card-info h3{margin:0 0 .5rem;color:#fff;font-size:1.2rem;font-weight:700;}
+  .card-info .meta{color:#9ca3af;font-size:.9rem;margin-bottom:.6rem;}
+  .card-info .grid-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem;margin-bottom:.6rem;}
+  .card-info .grid-meta div{font-size:.85rem;color:#d1d5db;}
+
+  .badge{padding:.3rem .6rem;border-radius:10px;font-size:.7rem;font-weight:700;text-transform:uppercase;}
+  .badge.active{background:rgba(34,197,94,.2);color:#22c55e;}
+  .badge.upcoming{background:rgba(234,179,8,.2);color:#eab308;}
+  .badge.past{background:rgba(107,114,128,.2);color:#9ca3af;}
+
+  .actions{display:flex;gap:.4rem;justify-content:flex-end;margin-top:.5rem;}
+  .btn-small{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:1rem;cursor:pointer;transition:transform .2s;}
+  .btn-edit{background:rgba(59,130,246,.2);color:#3b82f6;border:none;}
+  .btn-edit:hover{background:rgba(59,130,246,.3);transform:scale(1.1);}
+  .btn-delete{background:rgba(239,68,68,.2);color:#ef4444;border:none;}
+  .btn-delete:hover{background:rgba(239,68,68,.3);transform:scale(1.1);}
+
+  .no-results{text-align:center;padding:3rem;color:#9ca3af;}
+  .alert{padding:1rem;border-radius:10px;margin-bottom:1rem;}
+  .alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;}
+
+  .modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);}
+  .modal-content{
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;
+    backdrop-filter:blur(20px);max-width:380px;margin:10% auto;padding:2rem;text-align:center;
+  }
+  .modal-content h3{color:#fff;margin-bottom:1rem;}
+  .modal-content p{color:#9ca3af;margin-bottom:2rem;}
+  .modal-actions{display:flex;gap:1rem;justify-content:center;}
+  .btn-cancel,.btn-confirm{padding:.7rem 1.3rem;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
+  .btn-cancel{background:rgba(107,114,128,.2);color:#9ca3af;}
+  .btn-confirm{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
+
+  @media(max-width:768px){ .filters{flex-direction:column;} .grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+
+{% block admin_actions %}
+  <a href="{{ url_for('admin.nueva_funcion') }}" class="btn-primary">🎬 Nueva Función</a>
+{% endblock %}
+
+{% block admin_content %}
+<section class="functions-wrapper">
+  <div class="header-flex"><h1>Gestionar Funciones</h1></div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}{% for message in messages %}<div class="alert alert-success">{{ message }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+
+  <div class="stats-summary">
+    <div class="stat-item"><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total</div></div>
+    <div class="stat-item"><div class="stat-value">{{ stats.activas }}</div><div class="stat-label">Activas</div></div>
+    <div class="stat-item"><div class="stat-value">{{ stats.proximas }}</div><div class="stat-label">Próximas</div></div>
+    <div class="stat-item"><div class="stat-value">{{ stats.pasadas }}</div><div class="stat-label">Pasadas</div></div>
+  </div>
+
+  <div class="filters">
+    <input id="searchInput" class="search-input" placeholder="Buscar por título, género o sala...">
+    <select id="statusFilter" class="filter-select">
+      <option value="">Todos los estados</option><option value="active">Activas</option><option value="upcoming">Próximas</option><option value="past">Pasadas</option>
+    </select>
+    <select id="genreFilter" class="filter-select">
+      <option value="">Todos los géneros</option>
+      <option value="Acción">Acción</option><option value="Drama">Drama</option>
+      <option value="Comedia">Comedia</option><option value="Ciencia Ficción">Ciencia Ficción</option>
+      <option value="Terror">Terror</option><option value="Aventura">Aventura</option>
+    </select>
+  </div>
+
+  <div id="functionsGrid" class="grid">
+    {% if funciones %}
+      {% for f in funciones %}
+      <div class="card"
+           data-title="{{ f.titulo.lower() }}"
+           data-genre="{{ f.genero.lower() }}"
+           data-sala="{{ f.sala.lower() }}"
+           data-status="{{ f.status }}">
+        {% if f.poster %}
+          <img src="{{ f.poster }}" alt="{{ f.titulo }}" onerror="this.style.display='none'">
+        {% else %}
+          <div style="height:200px;display:flex;align-items:center;justify-content:center;font-size:3rem;color:#fff;background:linear-gradient(135deg,#667eea,#764ba2);">🎬</div>
+        {% endif %}
+        <div class="card-info">
+          <h3>{{ f.titulo }}</h3>
+          <div class="meta">{{ f.genero }} • {{ f.duracion }} min</div>
+          <div class="grid-meta">
+            <div>📅 {{ f.fecha }}</div><div>🕒 {{ f.hora }}</div>
+            <div>🏛️ {{ f.sala }}</div><div>💰 ${{ f.precio }}</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge {{ f.status }}">{{ 'Activa' if f.status=='active' else 'Próxima' if f.status=='upcoming' else 'Pasada' }}</span>
+            <div class="actions">
+              <a href="{{ url_for('admin.editar_funcion', funcion_id=f.id) }}" class="btn-small btn-edit" title="Editar">✏️</a>
+              <button class="btn-small btn-delete" onclick="confirmDelete('{{ f.id }}','{{ f.titulo }}')" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-results">
+        <p>No hay funciones programadas.</p>
+        <a href="{{ url_for('admin.nueva_funcion') }}" class="btn-primary" style="margin-top:1rem;">🎬 Crear Primera Función</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Confirmar Eliminación</h3>
+    <p id="deleteMessage">¿Estás seguro de que deseas eliminar esta función?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+      <form id="deleteForm" method="POST" style="display:inline;">
+        <button type="submit" class="btn-confirm">Eliminar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const search=document.getElementById('searchInput'),
+        status=document.getElementById('statusFilter'),
+        genre=document.getElementById('genreFilter'),
+        grid=document.getElementById('functionsGrid');
+
+  function filter(){
+    const term=(search.value||'').toLowerCase(),
+          s=status.value, g=(genre.value||'').toLowerCase();
+    const cards=[...grid.querySelectorAll('.card')];
+    let visible=0;
+    cards.forEach(c=>{
+      const title=c.dataset.title, gen=c.dataset.genre, sala=c.dataset.sala, st=c.dataset.status;
+      const match=(title.includes(term)||gen.includes(term)||sala.includes(term)) && (!s||st===s) && (!g||gen.includes(g));
+      c.style.display=match?'block':'none';
+      if(match) visible++;
+    });
+    let noMsg=grid.querySelector('.no-results');
+    if(visible===0){
+      if(!noMsg){ noMsg=document.createElement('div'); noMsg.className='no-results'; noMsg.innerHTML='<p>No se encontraron funciones.</p>'; grid.appendChild(noMsg); }
+      noMsg.style.display='block';
+    }else if(noMsg){ noMsg.style.display='none'; }
+  }
+  [search,status,genre].forEach(e=>e.addEventListener('input',filter));
+
+  function confirmDelete(id,title){
+    document.getElementById('deleteMessage').textContent=`¿Eliminar "${title}"?`;
+    document.getElementById('deleteForm').action='{{ url_for("admin.eliminar_funcion", funcion_id=0)[:-1] }}'.replace(/0$/, id);
+    document.getElementById('deleteModal').style.display='block';
+  }
+  function closeDeleteModal(){ document.getElementById('deleteModal').style.display='none'; }
+  window.onclick=e=>{ const m=document.getElementById('deleteModal'); if(e.target===m) m.style.display='none'; }
+</script>
+{% endblock %}

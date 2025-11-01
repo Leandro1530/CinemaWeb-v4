@@ -1,0 +1,27 @@
+# Logrotate configuration for Cinema App
+/var/log/cinema/*.log {
+    daily
+    missingok
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 644 www-data www-data
+    postrotate
+        systemctl reload cinema.service > /dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/nginx/cinema*.log {
+    daily
+    missingok
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 644 www-data adm
+    sharedscripts
+    postrotate
+        systemctl reload nginx > /dev/null 2>&1 || true
+    endscript
+}

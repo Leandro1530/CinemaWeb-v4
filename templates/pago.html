@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Pago de entradas | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Pago: capa visual alineada a modern-ui.css (solo front) ===== */
+  .pay-wrap { max-width: 1100px; margin-inline: auto; }
+  .pay-main { padding: clamp(16px, 2.8vw, 28px); }
+
+  .pay-header { text-align:center; margin-bottom: clamp(14px,2.5vw,22px); }
+  .pay-title { font-size: clamp(1.4rem,2.2vw,2rem); font-weight: 800; margin: 0 0 .25rem; }
+  .pay-sub { color: var(--muted); margin: 0; }
+
+  .pay-grid{
+    display:grid; gap: clamp(14px, 2.2vw, 20px);
+    grid-template-columns: minmax(0,1fr) 360px; align-items:start;
+  }
+  @media (max-width: 980px){ .pay-grid{ grid-template-columns: 1fr; } }
+
+  /* Resumen de compra (izquierda) */
+  .resume-card{ padding:14px; }
+  .resume-title{ margin:0 0 10px; font-weight:800; color:#9fb1ff; }
+  .resume-info{ color: var(--muted); margin: 0; }
+  .seat-chip{
+    background: linear-gradient(135deg, #4f6df5, #3b56e8);
+    color:#fff; padding:6px 12px; border-radius:999px; font-weight:700; font-size:.9rem;
+  }
+  .seats-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+
+  .combo-item{
+    background:#0f1428; border:1px solid rgba(255,255,255,.08); border-radius:10px;
+    padding:10px 12px; display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;
+  }
+  .combo-name{ font-weight:700; margin:0; }
+  .combo-desc{ color: var(--muted); margin:2px 0 0; font-size:.92rem; }
+  .combo-price{ color:#22c55e; font-weight:800; white-space:nowrap; }
+
+  /* Método de pago (derecha) */
+  .pay-method{ padding:14px; }
+  .method-head{ text-align:center; }
+  .method-icon{ font-size:2.2rem; margin-bottom:.25rem; }
+  .method-title{ margin:.25rem 0; font-weight:800; }
+  .method-desc{ color:var(--muted); margin:0; font-size:.95rem; }
+
+  .amount-box{
+    margin-top:12px; padding:12px;
+    border:1px solid rgba(79,109,245,.28); border-radius:12px;
+    background: rgba(79,109,245,.08);
+  }
+  .amount-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; }
+  .amount-total{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:8px; padding-top:10px; border-top:2px solid rgba(79,109,245,.28);
+    font-weight:800; font-size:1.3rem; color:#22c55e;
+  }
+
+  .actions{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; }
+  @media (max-width:720px){
+    .actions{ flex-direction:column; align-items:stretch; }
+    .actions .btn-primary, .actions .btn-ghost, .actions .btn-secondary{ width:100%; }
+  }
+
+  /* Alertas (mantengo tu lógica, solo look) */
+  .alert{
+    padding: .9rem 1rem; border-radius:12px; margin-bottom:1rem; border:1px solid transparent;
+  }
+  .alert-danger{ background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.35); color:#fca5a5; }
+  .alert-success{ background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.35); color:#86efac; }
+</style>
+{% endblock %}
+
+{% block content %}
+{# --------- Normalizaciones (no tocan backend) --------- #}
+{% set sel = seleccion|default({ 'titulo':'-', 'fecha':'-', 'hora':'-', 'sala':'-' }) %}
+{% set _seats = seats|default([]) %}
+{% set _combos = combos|default([]) %}
+{% set _tot_e = total_entradas|default(0.0) %}
+{% set _tot_c = total_combos|default((_combos|map(attribute='precio')|sum) if _combos else 0.0) %}
+{% set _tot    = total|default(_tot_e + _tot_c) %}
+{% set suc = sucursal|default(session.branch if session and session.branch is defined else '-') %}
+
+<div class="page-container pay-wrap">
+  <!-- Hero -->
+  <section class="hero card">
+    <div class="pay-header">
+      <h1 class="pay-title">Finalizar compra</h1>
+      <p class="pay-sub">Sucursal: <strong style="color:var(--text)">{{ suc }}</strong></p>
+    </div>
+  </section>
+
+  <!-- Mensajes -->
+  {% if errores %}
+    <div class="alert alert-danger">
+      <ul style="margin:0; padding-left:1.1rem;">
+        {% for error in errores %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if exito %}
+    <div class="alert alert-success">{{ exito }}</div>
+  {% endif %}
+
+  <!-- Contenido principal -->
+  <section class="card form-card pay-main">
+    <div class="pay-grid">
+      <!-- Izquierda: resumen de compra -->
+      <div class="card resume-card">
+        <h3 class="resume-title">Resumen de tu compra</h3>
+        <p class="resume-info">
+          <strong style="color:var(--text)">{{ sel.titulo }}</strong><br>
+          {{ sel.fecha }} · {{ sel.hora }} · Sala {{ sel.sala }}
+        </p>
+
+        <div style="margin-top:10px;">
+          <div class="resume-title" style="color:#cdd7ff; margin:0 0 6px;">Asientos</div>
+          {% if _seats and _seats|length > 0 %}
+            <div class="seats-grid">
+              {% for s in _seats %}<span class="seat-chip">{{ s }}</span>{% endfor %}
+            </div>
+          {% else %}
+            <p class="resume-info">Sin asientos seleccionados.</p>
+          {% endif %}
+        </div>
+
+        {% if _combos and _combos|length > 0 %}
+        <div style="margin-top:14px;">
+          <div class="resume-title" style="color:#cdd7ff; margin:0 0 6px;">Combos</div>
+          <div class="vstack" style="gap:8px;">
+            {% for combo in _combos %}
+            <div class="combo-item">
+              <div>
+                <div class="combo-name">{{ combo.nombre }}</div>
+                {% if combo.descripcion %}<div class="combo-desc">{{ combo.descripcion }}</div>{% endif %}
+              </div>
+              <div class="combo-price">${{ "%.2f"|format(combo.precio) }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="actions" style="margin-top:12px;">
+          <a class="btn-ghost" href="{{ url_for('venta.reserva_asientos') }}">Editar asientos</a>
+          <a class="btn-ghost" href="{{ url_for('venta.combos') }}">Editar combos</a>
+        </div>
+      </div>
+
+      <!-- Derecha: método de pago -->
+      <aside class="card pay-method">
+        <div class="method-head">
+          <div class="method-icon">💳</div>
+          <h3 class="method-title">Mercado Pago</h3>
+          <p class="method-desc">Tarjetas, efectivo y transferencias</p>
+        </div>
+
+        <div class="amount-box">
+          <div class="amount-row">
+            <span>Entradas ({{ _seats|length if _seats else 0 }})</span>
+            <strong>${{ "%.2f"|format(_tot_e) }}</strong>
+          </div>
+          <div class="amount-row">
+            <span>Combos</span>
+            <strong>${{ "%.2f"|format(_tot_c) }}</strong>
+          </div>
+          <div class="amount-total">
+            <span>TOTAL</span>
+            <span>${{ "%.2f"|format(_tot) }}</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; color:var(--muted);">
+          <div>Pagás con el correo de tu cuenta:</div>
+          <div style="color:var(--text); font-weight:800;">{{ email }}</div>
+        </div>
+
+        <!-- POST hacia el checkout: el backend toma email de la sesión -->
+        <form method="POST" action="{{ url_for('pago.pago') }}" style="margin-top:12px;" onsubmit="return habilitadoPago();">
+          <button
+            type="submit"
+            class="btn-primary"
+            {% if not _tot or (_seats|length == 0) %}disabled{% endif %}
+            title="{% if not _tot or (_seats|length == 0) %}Seleccioná función y asientos para habilitar el pago{% else %}Pagar con Mercado Pago{% endif %}">
+            Pagar con Mercado Pago — ${{ "%.2f"|format(_tot) }}
+          </button>
+        </form>
+
+        {% if not _tot or (_seats|length == 0) %}
+          <small style="display:block; color:var(--muted); margin-top:.5rem;">
+            Seleccioná función y asientos para habilitar el pago.
+          </small>
+        {% endif %}
+      </aside>
+    </div>
+
+    <!-- Navegación secundaria -->
+    <div class="actions">
+      <a href="{{ url_for('venta.combos') }}" class="btn-secondary">← Volver a combos</a>
+      <a href="{{ url_for('main.bienvenida') }}" class="btn-secondary">Ir al inicio</a>
+    </div>
+  </section>
+</div>
+
+<script>
+  // No cambia lógica: solo evita enviar si el botón está deshabilitado
+  function habilitadoPago(){
+    try{
+      const btn = document.querySelector('.btn-primary');
+      if(btn && btn.hasAttribute('disabled')) return false;
+    }catch(e){}
+    return true;
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+
+/* modern-ui.css: capa de estilos moderna y responsive que NO rompe las clases existentes.
+   Se carga DESPUÉS de style.css y main.css para override suave. */
+
+:root{
+  --bg: #0b1020;
+  --panel: #11162a;
+  --panel-2: #161c33;
+  --brand: #7cbc29; /* pedido histórico de Paolo */
+  --brand-2: #4f6df5;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --ok: #16a34a;
+  --warn: #f59e0b;
+  --err: #ef4444;
+  --shadow: 0 8px 24px rgba(0,0,0,.35);
+  --radius: 16px;
+}
+
+html, body{
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a{ color: var(--brand-2); text-decoration: none; }
+a:hover{ text-decoration: underline; }
+
+/* Contenedor responsive base */
+.container, .content, .page-container{
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: clamp(12px, 2vw, 24px);
+}
+
+/* Top nav reusando el partial existente */
+.site-nav{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: saturate(140%) blur(6px);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.nav-inner{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 10px 16px;
+}
+
+.brand{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+
+.brand .dot{
+  width: 10px; height: 10px; border-radius: 999px; background: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 24%, transparent);
+}
+
+.nav-links{
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nav-links a, .top-left-buttons a, .top-right-buttons a{
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 86%, transparent), var(--panel));
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.nav-actions{
+  display: flex; align-items:center; gap: 8px;
+}
+
+.btn-primary{
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-2) 85%, transparent), var(--brand-2));
+  color: white;
+  border: 1px solid color-mix(in srgb, var(--brand-2) 60%, black);
+}
+.btn-primary:hover{ filter: brightness(1.08); }
+
+.btn-ghost{
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.14);
+}
+.btn-ghost:hover{ background: rgba(255,255,255,.06); }
+
+/* Tarjetas */
+.card, .card-central, .stat-card, .mp-summary, .mp-total-pagar, .tarjeta{
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Grids */
+.grid{
+  display: grid;
+  gap: clamp(12px, 2vw, 18px);
+}
+.grid.cols-2{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+.grid.cols-3{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+.grid.cols-4{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+
+@media (max-width: 1024px){
+  .grid.cols-4{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media (max-width: 768px){
+  .grid.cols-3{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 560px){
+  .grid.cols-2, .grid.cols-3{ grid-template-columns: 1fr; }
+}
+
+/* Formularios */
+input, select, textarea{
+  background: #0f1428;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  width: 100%;
+}
+label{ color: var(--muted); font-size: .95rem; }
+
+/* Tablas admin: scroll horizontal en móvil */
+.table-responsive{
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.table-responsive table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px; /* evita romper en móvil */
+}
+.table-responsive th, .table-responsive td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+/* Footer */
+.site-footer{
+  margin-top: 40px;
+  padding: 24px 16px;
+  color: var(--muted);
+  border-top: 1px solid rgba(255,255,255,.06);
+  text-align: center;
+}
+
+/* Helpers */
+.hstack{ display:flex; align-items:center; gap:10px; }
+.vstack{ display:flex; flex-direction:column; gap:10px; }
+
+/* Mejora de secciones existentes sin romper clases previas */
+.admin-dashboard .stats-grid{
+  display:grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+}
+@media (max-width: 1024px){
+  .admin-dashboard .stats-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 560px){
+  .admin-dashboard .stats-grid{ grid-template-columns: 1fr; }
+}
+
+/* Botón flotante volver/atrás existente */
+.back-button{ position: fixed; left: 16px; bottom: 16px; }

@@ -1,0 +1,333 @@
+{% extends "admin_base.html" %}
+{% block title %}Panel Administrativo - Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+:root{ --admin-nav-height: 70px; }
+
+/* ===== HERO ===== */
+.admin-hero{
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  backdrop-filter: blur(12px);
+  padding:clamp(16px,2vw,24px);
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+}
+.admin-hero h1{ margin:0; font-size: clamp(1.4rem,2.2vw,1.9rem); font-weight:800; }
+.admin-hero p{ margin:0; color:var(--muted); }
+
+/* ===== BOTÓN VOLVER ARRIBA DERECHA ===== */
+.btn-exit{
+  background: transparent; color:#d6dcff;
+  border:1px solid rgba(214,220,255,.25);
+  padding:.7rem 1.1rem; border-radius:10px; font-weight:700;
+  text-decoration:none; transition:.2s;
+}
+.btn-exit:hover{ background: rgba(214,220,255,.08); box-shadow: 0 8px 22px rgba(0,0,0,.25); transform: translateY(-1px); }
+
+/* ===== STATS ===== */
+.stats-grid{
+  margin-top:14px;
+  display:grid; gap:14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.stat-card{
+  background: rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:18px; text-align:center;
+  transition:transform .2s, box-shadow .2s, border-color .2s;
+}
+.stat-card:hover{ transform: translateY(-2px); border-color: rgba(79,109,245,.35); box-shadow:0 10px 24px rgba(0,0,0,.28); }
+.stat-value{ font-size:2rem; font-weight:800; color:#4f6df5; }
+.stat-label{ color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; font-size:.82rem; }
+
+/* ===== ACCIONES RÁPIDAS ===== */
+.quick-actions{
+  display:grid; gap:12px; margin-top:16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.qaction{
+  text-decoration:none; color:#fff; padding:16px; border-radius:12px;
+  background: linear-gradient(135deg,#4f6df5,#3b56e8);
+  display:flex; flex-direction:column; gap:4px; align-items:flex-start;
+  transition: transform .2s, box-shadow .2s;
+}
+.qaction:hover{ transform: translateY(-2px); box-shadow:0 10px 25px rgba(79,109,245,.35); }
+.qaction h3{ margin:0; font-size:1rem; }
+.qaction p{ margin:0; font-size:.9rem; opacity:.9; }
+
+/* ===== TRANSACCIONES (CARRUSEL PÁGINAS DE 10) ===== */
+.tx-card{
+  margin-top:18px;
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:18px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.32);
+  overflow:hidden;
+}
+.tx-head{
+  padding: 14px 18px 12px;
+  background: linear-gradient(180deg, rgba(79,109,245,.18), rgba(79,109,245,.08));
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.tx-title{
+  margin:0; font-weight:800; letter-spacing:.2px;
+  font-size: clamp(1.05rem, 2vw, 1.2rem); color:#cfe0ff;
+}
+
+/* carrusel */
+.tx-slider{
+  position:relative;
+  overflow:hidden;
+}
+.tx-track{
+  display:flex;
+  transition: transform .35s ease;
+  will-change: transform;
+}
+.tx-page{
+  flex: 0 0 100%;
+  padding: 0;
+}
+
+/* tabla */
+.tx-table-wrap{ width:100%; overflow-x:auto; }
+.tx-table{ width:100%; border-collapse: collapse; table-layout: fixed; background: rgba(11,18,31,.95); }
+.tx-table colgroup col.col-id     { width: 110px; }
+.tx-table colgroup col.col-user   { width: auto;  }
+.tx-table colgroup col.col-amount { width: 150px; }
+.tx-table colgroup col.col-date   { width: 170px; }
+.tx-table thead th{
+  text-align:left; font-size:.82rem; letter-spacing:.6px; text-transform: uppercase;
+  color:#9fb1ff; background: #0a1222; padding: 12px 16px; white-space: nowrap;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  position: sticky; top: 0; z-index: 1; /* por si scrollean vertical */
+}
+.tx-table tbody td{
+  padding: 12px 16px; border-bottom:1px solid rgba(255,255,255,.06);
+  color:#e7e9ee; overflow: hidden; text-overflow: ellipsis;
+}
+.tx-row{ transition: background .18s, transform .18s, box-shadow .18s; }
+.tx-row:hover{ background: rgba(255,255,255,.03); transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(79,109,245,.15); }
+.id-soft{ color:#9aa4b2; font-family: ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; }
+.user-col{ display:flex; align-items:center; gap:.7rem; min-width:220px; }
+.avatar{
+  flex: 0 0 34px; width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.9rem;
+  color:#0b121f; background: radial-gradient(circle at 30% 30%, #7cbc29, #4f6df5);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.06);
+}
+.email{ font-weight:600; color:#e7ebff; word-break: break-word; }
+.amount{
+  font-weight:800; color:#22c55e; background: rgba(34,197,94,.12);
+  border:1px solid rgba(34,197,94,.25); padding:.35rem .7rem; border-radius:999px;
+  display:inline-block; min-width:88px; text-align:center;
+}
+.date-col{ color:#aab2c0; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* controles carrusel */
+.tx-controls{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding: 12px 16px; border-top:1px solid rgba(255,255,255,.08);
+  background: rgba(10,18,34,.5);
+}
+.tx-dots{ display:flex; gap:6px; align-items:center; }
+.tx-dot{
+  width:9px; height:9px; border-radius:50%;
+  background: rgba(255,255,255,.25); border:1px solid rgba(255,255,255,.35);
+}
+.tx-dot.active{ background:#4f6df5; border-color:#4f6df5; box-shadow:0 0 0 3px rgba(79,109,245,.25); }
+.tx-nav{
+  display:flex; gap:8px;
+}
+.btn-ghost{
+  background:transparent; color:#d6dcff; border:1px solid rgba(214,220,255,.25);
+  padding:.5rem .9rem; border-radius:8px; font-weight:700; cursor:pointer;
+}
+.btn-ghost[disabled]{ opacity:.4; cursor:not-allowed; }
+
+/* responsive tabla a lista */
+@media (max-width: 760px){
+  .tx-table, .tx-table thead, .tx-table tbody, .tx-table tr, .tx-table th, .tx-table td { display:block; }
+  .tx-table thead { display:none; }
+  .tx-row { border-bottom:1px solid rgba(255,255,255,.08); padding:10px 12px; }
+  .tx-table tbody td { border:0; padding:6px 0; }
+  .amount{ min-width:unset; }
+}
+</style>
+{% endblock %}
+
+{% block admin_actions %}
+<a href="{{ url_for('main.bienvenida') }}" class="btn-exit">↩ Volver al sitio</a>
+{% endblock %}
+
+{% block admin_content %}
+<section class="admin-hero">
+  <div>
+    <h1>Panel Administrativo</h1>
+    <p>Gestioná tu cine desde aquí</p>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total_usuarios }}</div>
+    <div class="stat-label">Usuarios</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total_funciones }}</div>
+    <div class="stat-label">Funciones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total_transacciones }}</div>
+    <div class="stat-label">Transacciones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">${{ "%.0f"|format(stats.ingresos_total) }}</div>
+    <div class="stat-label">Ingresos</div>
+  </div>
+</section>
+
+<!-- Acciones rápidas -->
+<section class="quick-actions">
+  <a href="{{ url_for('admin.usuarios') }}" class="qaction">
+    <h3>👥 Gestionar Usuarios</h3>
+    <p>Crear, editar y eliminar usuarios</p>
+  </a>
+  <a href="{{ url_for('admin.funciones') }}" class="qaction">
+    <h3>🎬 Gestionar Funciones</h3>
+    <p>Agregar y modificar funciones de cine</p>
+  </a>
+  <a href="{{ url_for('admin.nuevo_usuario') }}" class="qaction">
+    <h3>➕ Nuevo Usuario</h3>
+    <p>Crear una cuenta nueva</p>
+  </a>
+  <a href="{{ url_for('admin.nueva_funcion') }}" class="qaction">
+    <h3>🎭 Nueva Función</h3>
+    <p>Programar una nueva función</p>
+  </a>
+</section>
+
+<!-- Transacciones con páginas de 10 -->
+{% if transacciones %}
+{% set total = transacciones|length %}
+{% set page_size = 10 %}
+{% set pages = (total // page_size) + (1 if total % page_size > 0 else 0) %}
+
+<section class="tx-card" id="tx-card">
+  <div class="tx-head">
+    <h3 class="tx-title">Últimas Transacciones</h3>
+  </div>
+
+  <div class="tx-slider" id="tx-slider" data-pages="{{ pages }}">
+    <div class="tx-track" id="tx-track" style="transform: translateX(0%);">
+      {% for i in range(0, total, page_size) %}
+      {% set slice = transacciones[i:i+page_size] %}
+      <section class="tx-page">
+        <div class="tx-table-wrap">
+          <table class="tx-table">
+            <colgroup>
+              <col class="col-id">
+              <col class="col-user">
+              <col class="col-amount">
+              <col class="col-date">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in slice %}
+              {% set inicial = (t.usuario_email[:1] if t.usuario_email else '?')|upper %}
+              <tr class="tx-row">
+                <td><span class="id-soft">#{{ t.id }}</span></td>
+                <td>
+                  <div class="user-col">
+                    <span class="avatar">{{ inicial }}</span>
+                    <span class="email">{{ t.usuario_email }}</span>
+                  </div>
+                </td>
+                <td><span class="amount">${{ "%.0f"|format(t.monto_cents / 100) }}</span></td>
+                <td><span class="date-col">{{ t.created_at[:10] }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="tx-controls">
+    <div class="tx-dots" id="tx-dots">
+      {% for p in range(pages) %}
+      <span class="tx-dot{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}"></span>
+      {% endfor %}
+    </div>
+    <div class="tx-nav">
+      <button class="btn-ghost" id="tx-prev" disabled>← Anterior</button>
+      <button class="btn-ghost" id="tx-next">Siguiente →</button>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<script>
+(function(){
+  const track = document.getElementById('tx-track');
+  if(!track) return;
+
+  const slider = document.getElementById('tx-slider');
+  const totalPages = parseInt(slider.dataset.pages || '1', 10);
+  let page = 0;
+
+  const btnPrev = document.getElementById('tx-prev');
+  const btnNext = document.getElementById('tx-next');
+  const dotsWrap = document.getElementById('tx-dots');
+  const dots = dotsWrap ? Array.from(dotsWrap.querySelectorAll('.tx-dot')) : [];
+
+  function update(){
+    track.style.transform = `translateX(-${page*100}%)`;
+    if(btnPrev) btnPrev.disabled = page===0;
+    if(btnNext) btnNext.disabled = page===totalPages-1;
+    dots.forEach((d,i)=> d.classList.toggle('active', i===page));
+  }
+
+  if(btnPrev){
+    btnPrev.addEventListener('click', ()=>{ if(page>0){ page--; update(); } });
+  }
+  if(btnNext){
+    btnNext.addEventListener('click', ()=>{ if(page<totalPages-1){ page++; update(); } });
+  }
+  if(dots.length){
+    dots.forEach(d=> d.addEventListener('click', ()=>{
+      const idx = parseInt(d.dataset.index, 10);
+      if(!isNaN(idx)){ page = idx; update(); }
+    }));
+  }
+
+  // swipe táctil (opcional)
+  let startX = null;
+  track.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchmove', e=>{
+    if(startX===null) return;
+    const dx = e.touches[0].clientX - startX;
+    if(Math.abs(dx) > 60){
+      if(dx < 0 && page < totalPages-1){ page++; update(); }
+      if(dx > 0 && page > 0){ page--; update(); }
+      startX = null;
+    }
+  }, {passive:true});
+})();
+</script>
+{% endblock %}

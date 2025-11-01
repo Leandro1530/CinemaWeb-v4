@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Error en el Pago - Cinema App{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Error de pago (estilo coherente con modern-ui.css) ===== */
+  .error-wrap { max-width: 900px; margin-inline: auto; }
+  .error-main { padding: clamp(16px, 2.8vw, 28px); }
+
+  .error-hero { text-align:center; margin-bottom: clamp(14px, 2.5vw, 22px); }
+  .error-title { font-size: clamp(1.4rem, 2.2vw, 2rem); font-weight: 800; margin: 0 0 .25rem; }
+  .error-sub   { color: var(--muted); margin: 0; }
+
+  .error-card{ padding: 16px; }
+
+  .error-icon{
+    width:74px; height:74px; margin: 0 auto 10px;
+    display:grid; place-items:center; border-radius: 18px;
+    background: rgba(239,68,68,.14);
+    border: 1px solid rgba(239,68,68,.35);
+    color: #ef4444; font-size: 2rem;
+    box-shadow: 0 10px 28px rgba(239,68,68,.15);
+  }
+
+  .error-lead{ text-align:center; margin: 6px 0 0; color: var(--muted); }
+
+  .detail-box{
+    background: rgba(239,68,68,.10);
+    border: 1px solid rgba(239,68,68,.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .detail-title{ margin: 0 0 8px; font-weight: 800; color: #fca5a5; display:flex; align-items:center; gap:8px; }
+  .detail-grid{ display: grid; gap: 6px; }
+  .detail-row strong{ color: #fecaca; }
+
+  .help-box{
+    background: rgba(234,179,8,.10);
+    border: 1px solid rgba(234,179,8,.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .help-title{ margin: 0 0 6px; font-weight: 800; color: #fde68a; display:flex; align-items:center; gap:8px; }
+  .help-list{ margin: 0; padding-left: 18px; color: var(--muted); }
+
+  .actions{ display:flex; gap: 12px; justify-content:center; margin-top: 16px; flex-wrap: wrap; }
+  @media (max-width:640px){ .actions .btn-primary, .actions .btn-ghost{ width:100%; } }
+
+  .support{ margin-top: 12px; text-align:center; color: var(--muted); }
+  .support strong{ color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container error-wrap">
+  <!-- Hero -->
+  <section class="hero card">
+    <div class="error-hero">
+      <div class="error-icon">⛔</div>
+      <h1 class="error-title">Error en el pago</h1>
+      <p class="error-sub">No pudimos procesar tu transacción en este momento.</p>
+    </div>
+  </section>
+
+  <!-- Contenido principal -->
+  <section class="card error-card error-main">
+    <p class="error-lead">
+      Te dejamos los detalles y algunos pasos que podés seguir para resolverlo.
+    </p>
+
+    {% if error_data %}
+    <div class="detail-box">
+      <div class="detail-title">ℹ️ Detalles del error</div>
+      <div class="detail-grid">
+        {% if error_data.payment_id %}
+          <div class="detail-row"><strong>ID de pago:</strong> {{ error_data.payment_id }}</div>
+        {% endif %}
+        {% if error_data.status %}
+          <div class="detail-row"><strong>Estado:</strong> {{ error_data.status }}</div>
+        {% endif %}
+        {% if error_data.external_reference %}
+          <div class="detail-row"><strong>Referencia:</strong> {{ error_data.external_reference }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="help-box">
+      <div class="help-title">⚠️ ¿Qué podés hacer?</div>
+      <ul class="help-list">
+        <li>Verificar que tu tarjeta tenga fondos suficientes.</li>
+        <li>Intentar con otro método de pago.</li>
+        <li>Contactar a tu banco si el problema persiste.</li>
+        <li>Volver a intentar en unos minutos.</li>
+      </ul>
+    </div>
+
+    <div class="actions">
+      <a href="{{ url_for('pago_mp.procesar_pago') }}" class="btn-primary">Intentar nuevamente</a>
+      <a href="{{ url_for('main.cartelera') }}" class="btn-ghost">Ver cartelera</a>
+    </div>
+
+    <div class="support">
+      Si el problema persiste, contactá a nuestro soporte.<br>
+      <strong>Email:</strong> soporte@cinema.com &nbsp;|&nbsp; <strong>Tel:</strong> (123) 456-7890
+    </div>
+  </section>
+</div>
+{% endblock %}

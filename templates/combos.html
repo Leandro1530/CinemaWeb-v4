@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Elegí tus combos | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* Oculta enlaces del footer solo en esta vista */
+  .yx-footer .hstack{ display:none !important; }
+
+  /* Contenedor principal centrado */
+  .combos-shell{ max-width:1200px; margin:0 auto; padding:clamp(12px,2.6vw,18px); }
+
+  /* HERO centrado y limpio (sin ícono lateral) */
+  .hero-card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    padding:clamp(18px,2.5vw,28px);
+    text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .hero-title{ margin:0; font-weight:900; font-size:clamp(1.35rem,2.3vw,1.9rem); }
+  .hero-sub{ color:var(--muted); margin:.4rem 0 0; font-size:clamp(.95rem,1.6vw,1rem); }
+
+  /* GRID de combos centrado */
+  .combos-grid-wrap{
+    display:flex; justify-content:center; gap:clamp(14px,2vw,18px);
+    flex-wrap:wrap; margin-top:clamp(18px,3vw,26px);
+  }
+
+  /* Tarjetas */
+  .card-c{
+    flex:1 1 260px; max-width:320px;
+    background:linear-gradient(180deg,rgba(20,25,40,.8),rgba(10,12,20,.9));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:16px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+  }
+  .card-c:hover{ transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.4); border-color:rgba(124,188,41,.35);}
+  .card-c.selected{ border-color:#7cbc29; box-shadow:0 0 0 2px rgba(124,188,41,.3) inset; }
+
+  .card-img{
+    background:linear-gradient(135deg,#4f6df5,#3b56e8);
+    height:80px; display:flex; align-items:center; justify-content:center;
+  }
+  .card-body{ padding:16px; display:flex; flex-direction:column; gap:10px; text-align:center; }
+  .card-head{ display:flex; align-items:center; justify-content:space-between; }
+  .c-name{ margin:0; font-weight:800; font-size:1.05rem; }
+  .c-price{
+    font-weight:800; color:#22c55e;
+    background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25);
+    border-radius:999px; padding:4px 10px;
+  }
+  .c-desc{ color:var(--muted); font-size:.93rem; margin:0; min-height:36px; }
+
+  /* Controles de cantidad */
+  .qty-row{ display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap; }
+  .qty-box{
+    display:flex; align-items:center; gap:8px;
+    background:#0f1428; border:1px solid rgba(255,255,255,.12);
+    border-radius:10px; padding:6px;
+  }
+  .qty-btn{
+    width:36px; height:36px; border-radius:999px; border:none;
+    background:#7cbc29; color:#fff; font-weight:900; font-size:1.1rem; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:transform .12s ease,filter .12s ease;
+  }
+  .qty-btn:hover:not(:disabled){ transform:scale(1.08); filter:brightness(1.05); }
+  .qty-btn:disabled{ opacity:.55; cursor:not-allowed; }
+  .qty-input{
+    width:54px; height:36px; background:transparent; color:var(--text);
+    border:0; text-align:center; font-weight:900; font-size:1.05rem;
+  }
+  .c-total{ color:var(--muted); font-weight:600; }
+  .c-total strong{ color:#22c55e; }
+
+  /* Resumen */
+  .summary{
+    display:none; margin-top:clamp(16px,2.6vw,22px);
+    background:rgba(79,109,245,.10);
+    border:1px solid rgba(79,109,245,.28);
+    border-radius:14px; padding:14px;
+  }
+  .summary-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .summary-head h3{ margin:0; color:#9fb1ff; font-size:1.05rem; }
+  .summary-total{ font-weight:800; color:#22c55e; }
+  .summary-items{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .summary-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  /* Acciones */
+  .actions{
+    display:flex; justify-content:center; align-items:center; gap:12px;
+    margin-top:clamp(18px,3vw,24px); flex-wrap:wrap;
+  }
+  .btn-secondary{
+    background:rgba(156,163,175,.18); color:#cfd3db; border:1px solid rgba(156,163,175,.30);
+  }
+  .btn-secondary:hover{ filter:brightness(1.08); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container combos-shell">
+  <!-- HERO -->
+  <section class="hero-card">
+    <h1 class="hero-title">Elegí tus combos</h1>
+    <p class="hero-sub">Agregá snacks para disfrutar durante la función</p>
+  </section>
+
+  <!-- GRID + FORM -->
+  <section>
+    <form method="post" action="{{ url_for('venta.combos') }}" id="combos-form">
+      <div class="combos-grid-wrap">
+        {% if combos %}
+          {% for c in combos %}
+          <article class="card-c" data-combo-id="{{ c.id }}">
+            <div class="card-img">
+              <svg width="40" height="40" fill="white" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM1 2v2h2l3.6 7.59-1.35 2.45c-.17.29-.25.62-.25.96a2 2 0 0 0 2 2h12v-2H7.42a.25.25 0 0 1-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21L4.27 2H1Zm16 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+              </svg>
+            </div>
+            <div class="card-body">
+              <div class="card-head">
+                <h3 class="c-name">{{ c.nombre }}</h3>
+                <span class="c-price">${{ "%.0f"|format(c.precio) }}</span>
+              </div>
+              <p class="c-desc">{{ c.descripcion }}</p>
+
+              <div class="qty-row">
+                <div class="qty-box">
+                  <button type="button" class="qty-btn decrease-btn" data-combo-id="{{ c.id }}">−</button>
+                  <input type="number" class="qty-input" id="quantity-{{ c.id }}" value="0" min="0" max="5" readonly>
+                  <button type="button" class="qty-btn increase-btn" data-combo-id="{{ c.id }}">+</button>
+                </div>
+              </div>
+
+              <div class="c-total">Total: <strong id="total-{{ c.id }}">$0</strong></div>
+            </div>
+          </article>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center; color:var(--muted); width:100%; padding:1rem;">
+            No hay combos disponibles. Podés continuar sin seleccionar.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Resumen dinámico (aparece solo si hay selección) -->
+      <div class="summary" id="combos-summary">
+        <div class="summary-head">
+          <h3>Resumen de combos</h3>
+          <div class="summary-total">Total: <span id="grand-total">$0</span></div>
+        </div>
+        <div class="summary-items" id="summary-items"></div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="actions">
+        <a class="btn-ghost" href="{{ url_for('venta.reserva_asientos') }}">← Volver</a>
+        <button class="btn-secondary" type="button" id="skip-combos">Saltar combos</button>
+        <button class="btn-primary" type="submit" id="confirm-combos">Continuar →</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Datos para JS -->
+<script type="application/json" id="combos-data">
+  {{ combos|tojson|safe if combos else '[]' }}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const combosData = JSON.parse(document.getElementById('combos-data').textContent || '[]');
+
+  const summary = document.getElementById('combos-summary');
+  const summaryItems = document.getElementById('summary-items');
+  const grandTotal = document.getElementById('grand-total');
+  const skipBtn = document.getElementById('skip-combos');
+
+  const form = document.getElementById('combos-form');
+  let selectedCombos = {};
+  combosData.forEach(c => selectedCombos[c.id] = 0);
+
+  function format(n){ return '$' + Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0}); }
+
+  function updateComboTotal(id, qty){
+    const combo = combosData.find(c => c.id == id);
+    const totalEl = document.getElementById('total-'+id);
+    const card = document.querySelector('.card-c[data-combo-id="'+id+'"]');
+    if(!combo || !totalEl || !card) return;
+
+    const total = qty * (combo.precio||0);
+    totalEl.textContent = format(total);
+    card.classList.toggle('selected', qty > 0);
+  }
+
+  function updateSummary(){
+    const has = Object.values(selectedCombos).some(v => v > 0);
+    summary.style.display = has ? 'block' : 'none';
+
+    if(!has){ summaryItems.innerHTML=''; grandTotal.textContent = '$0'; return; }
+
+    summaryItems.innerHTML = '';
+    let gTotal = 0;
+    for(const id in selectedCombos){
+      const qty = selectedCombos[id];
+      if(qty > 0){
+        const combo = combosData.find(c => c.id == id);
+        const sub = qty * (combo.precio||0);
+        gTotal += sub;
+
+        const row = document.createElement('div');
+        row.className = 'summary-item';
+        row.innerHTML = `<span>${qty}× ${combo.nombre}</span><span>${format(sub)}</span>`;
+        summaryItems.appendChild(row);
+      }
+    }
+    grandTotal.textContent = format(gTotal);
+  }
+
+  function updateHiddenInputs(){
+    // limpiar anteriores
+    form.querySelectorAll('input[name="combos"]').forEach(i => i.remove());
+    // crear uno por cada unidad (mantiene tu lógica)
+    for(const id in selectedCombos){
+      const qty = selectedCombos[id];
+      for(let i=0; i<qty; i++){
+        const input = document.createElement('input');
+        input.type='hidden'; input.name='combos'; input.value=id;
+        form.appendChild(input);
+      }
+    }
+  }
+
+  // Handlers +/- (clases conservadas: .increase-btn / .decrease-btn)
+  document.addEventListener('click', (e)=>{
+    if(e.target.classList.contains('increase-btn') || e.target.closest('.increase-btn')){
+      const btn = e.target.closest('.increase-btn');
+      const id = btn.dataset.comboId;
+      const qtyInput = document.getElementById('quantity-'+id);
+      const max = parseInt(qtyInput.max||'5',10);
+      let v = parseInt(qtyInput.value||'0',10);
+      if(v < max){ v++; qtyInput.value = v; selectedCombos[id] = v; }
+      updateComboTotal(id, v); updateSummary(); updateHiddenInputs();
+    }
+    if(e.target.classList.contains('decrease-btn') || e.target.closest('.decrease-btn')){
+      const btn = e.target.closest('.decrease-btn');
+      const id = btn.dataset.comboId;
+      const qtyInput = document.getElementById('quantity-'+id);
+      let v = parseInt(qtyInput.value||'0',10);
+      if(v > 0){ v--; qtyInput.value = v; selectedCombos[id] = v; }
+      updateComboTotal(id, v); updateSummary(); updateHiddenInputs();
+    }
+  });
+
+  // Saltar combos: limpia y envía
+  if(skipBtn){
+    skipBtn.addEventListener('click', ()=>{
+      for(const id in selectedCombos){
+        selectedCombos[id] = 0;
+        const qtyInput = document.getElementById('quantity-'+id);
+        if(qtyInput) qtyInput.value = 0;
+        updateComboTotal(id, 0);
+      }
+      updateSummary(); updateHiddenInputs();
+      form.submit();
+    });
+  }
+
+  // Init UI
+  combosData.forEach(c => updateComboTotal(c.id, 0));
+});
+</script>
+{% endblock %}

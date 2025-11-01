@@ -1,0 +1,122 @@
+<!-- NAVBAR fijo: brand arriba; menú izq + acciones der en la misma línea -->
+<nav class="site-nav yx-nav yx-nav--fixed" role="navigation" aria-label="Navegación principal">
+  <div class="yx-container nav-grid">
+
+    <!-- Línea superior: brand + toggle móvil -->
+    <div class="nav-top">
+      <div class="brand">
+        <span class="dot" aria-hidden="true"></span>
+        <a href="{{ url_for('main.bienvenida') }}" class="yx-nav-brand">Cinema3D</a>
+      </div>
+
+      <div class="nav-top-spacer"></div>
+
+      <button class="yx-btn yx-btn--ghost yx-nav-toggle" data-menu-toggle aria-label="Abrir menú">☰</button>
+    </div>
+
+    <!-- Línea inferior: IZQ = navegación / DER = acciones -->
+    <div class="nav-bottom">
+      <!-- IZQUIERDA -->
+      <div class="menu-left">
+        <a href="{{ url_for('main.bienvenida') }}">🏠 Inicio</a>
+        <a href="{{ url_for('venta.cartelera') }}">🎬 Cartelera</a>
+      </div>
+
+      <!-- DERECHA -->
+      <div class="actions-right">
+        {% if is_admin() %}
+          <a href="{{ url_for('admin.dashboard') }}" 
+             class="yx-btn yx-btn--admin"
+             title="Panel administrativo">
+            👑 <span>Admin</span>
+          </a>
+        {% endif %}
+
+        {% if is_logged_in() %}
+          <a class="yx-btn yx-btn--ghost" href="{{ url_for('auth.logout') }}">🚪 Salir</a>
+        {% else %}
+          <a class="yx-btn yx-btn--primary" href="{{ url_for('auth.registro') }}">✨ Registrarse</a>
+          <a class="yx-btn yx-btn--ghost" href="{{ url_for('auth.login', next=request.path) }}">🔐 Entrar</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Menú móvil -->
+    <div class="mobile-menu" hidden>
+      <div class="yx-container mobile-menu-inner">
+        <div class="hstack">
+          <a href="{{ url_for('main.bienvenida') }}">🏠 Inicio</a>
+          <a href="{{ url_for('venta.cartelera') }}">🎬 Cartelera</a>
+        </div>
+        <div class="hstack">
+          {% if is_admin() %}
+            <a href="{{ url_for('admin.dashboard') }}" class="yx-btn--admin">👑 Admin</a>
+          {% endif %}
+          {% if is_logged_in() %}
+            <a href="{{ url_for('auth.logout') }}">🚪 Salir</a>
+          {% else %}
+            <a href="{{ url_for('auth.registro') }}">✨ Registrarse</a>
+            <a href="{{ url_for('auth.login', next=request.path) }}">🔐 Entrar</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+<!-- Espaciador para nav fijo -->
+<div class="yx-nav-spacer"></div>
+
+<style>
+  /* === Botón Admin especial === */
+  .yx-btn--admin {
+    background: linear-gradient(135deg, #7cbc29, #4f6df5);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.6rem 1.3rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 0 18px rgba(124,188,41,0.4);
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+  }
+
+  .yx-btn--admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(124,188,41,0.7);
+    filter: brightness(1.1);
+  }
+
+  .yx-btn--admin span {
+    font-weight: 700;
+    letter-spacing: .3px;
+  }
+
+  /* === Responsive para Admin en menú móvil === */
+  @media (max-width: 900px) {
+    .mobile-menu .yx-btn--admin {
+      display: inline-flex;
+      justify-content: center;
+      width: 100%;
+      text-align: center;
+      margin-top: .5rem;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const btn = document.querySelector('[data-menu-toggle]');
+    const menu = document.querySelector('.mobile-menu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', () => {
+      const open = menu.hasAttribute('hidden');
+      if (open) menu.removeAttribute('hidden'); 
+      else menu.setAttribute('hidden', '');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  })();
+</script>

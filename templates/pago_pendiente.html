@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Pago en proceso | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+/* ===== Pago pendiente (estilo moderno unificado) ===== */
+.pending-wrap{ max-width:960px; margin-inline:auto; padding:clamp(16px,2.8vw,32px); text-align:center; }
+.pending-icon{
+  width:80px; height:80px; margin:0 auto 16px;
+  border-radius:22px; display:grid; place-items:center;
+  background:rgba(250,204,21,.15); border:1px solid rgba(250,204,21,.25);
+  box-shadow:0 8px 28px rgba(250,204,21,.2);
+  color:#facc15; font-size:2.4rem; animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{ transform:scale(1);}
+  50%{ transform:scale(1.1);}
+  100%{ transform:scale(1);}
+}
+
+.pending-card{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+  backdrop-filter:blur(18px);
+  padding:clamp(18px,2vw,28px);
+  margin-top:18px;
+}
+
+.pending-card h2{font-weight:800;margin-bottom:.4rem;}
+.pending-card p{color:var(--muted);margin-top:0;}
+
+.info-block{
+  text-align:left;
+  background:rgba(250,204,21,.08);
+  border:1px solid rgba(250,204,21,.25);
+  border-radius:12px;
+  padding:1rem;
+  color:#eab308;
+  margin-top:1rem;
+}
+.info-block strong{color:#fef9c3;}
+
+.alert-block{
+  background:rgba(79,109,245,.1);
+  border:1px solid rgba(79,109,245,.25);
+  border-radius:12px;
+  padding:1rem;
+  text-align:left;
+  margin-top:1rem;
+}
+.alert-block h3{margin:0 0 .5rem; color:#9fb1ff; font-size:1rem;}
+.alert-block ul{margin:0; padding-left:1.2rem; color:var(--muted); font-size:.95rem;}
+
+.countdown{
+  margin-top:1rem;
+  font-weight:600;
+  color:#facc15;
+  display:flex; align-items:center; justify-content:center; gap:.5rem;
+}
+
+.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:1.8rem;}
+.btn{
+  padding:.8rem 1.2rem;border-radius:10px;font-weight:700;
+  text-decoration:none;display:inline-block;
+  transition:transform .25s,box-shadow .25s;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#4f6df5,#7c3aed);color:#fff;
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
+.small-note{color:var(--muted);font-size:.85rem;margin-top:1rem;}
+@media(max-width:768px){.btn{width:100%;text-align:center;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container pending-wrap">
+  <div class="pending-icon">⏳</div>
+  <h2>Pago en Proceso</h2>
+  <p>Tu pago está siendo verificado por <strong>Mercado Pago</strong>.</p>
+
+  <div class="pending-card">
+    {% if pending_data %}
+    <div class="info-block">
+      <h4 style="margin-top:0;">Información del Pago</h4>
+      {% if pending_data.payment_id %}
+        <p><strong>ID de Pago:</strong> {{ pending_data.payment_id }}</p>
+      {% endif %}
+      {% if pending_data.status %}
+        <p><strong>Estado:</strong> {{ pending_data.status }}</p>
+      {% endif %}
+      {% if pending_data.external_reference %}
+        <p><strong>Referencia:</strong> {{ pending_data.external_reference }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="alert-block">
+      <h3>¿Qué está pasando?</h3>
+      <ul>
+        <li>Tu pago está siendo verificado por Mercado Pago.</li>
+        <li>Este proceso puede tomar hasta <strong>24 horas</strong>.</li>
+        <li>Recibirás un correo electrónico con la confirmación.</li>
+        <li>Tus asientos permanecen reservados mientras tanto.</li>
+      </ul>
+    </div>
+
+    <div class="countdown">
+      <i class="fas fa-sync fa-spin"></i>
+      Verificando estado cada 30 segundos...
+    </div>
+
+    <div class="actions">
+      <a href="{{ url_for('main.index') }}" class="btn btn-primary">🏠 Ir al Inicio</a>
+      <a href="{{ url_for('main.cartelera') }}" class="btn btn-primary">🎬 Ver Cartelera</a>
+    </div>
+
+    <div class="small-note">
+      Recibirás un email de confirmación cuando el pago sea procesado.<br>
+      <strong>Consultas:</strong> soporte@cinema.com | (123) 456-7890
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Auto-actualizar estado cada 30s =====
+{% if pending_data and pending_data.external_reference %}
+let checkCount=0, maxChecks=20;
+function checkStatus(){
+  if(checkCount>=maxChecks) return;
+  fetch('/pago-mp/estado/{{ pending_data.external_reference }}')
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.status && data.status!=='PENDIENTE') location.reload();
+    checkCount++;
+  })
+  .catch(e=>{console.log('Error verificando estado:',e); checkCount++;});
+}
+checkStatus();
+setInterval(checkStatus,30000);
+{% endif %}
+</script>
+{% endblock %}

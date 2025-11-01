@@ -1,0 +1,30 @@
+# COMANDOS PARA EJECUTAR EN PUTTY - ARREGLAR MERCADOPAGO
+
+# 1. Conectar al servidor
+ssh root@31.97.174.96
+
+# 2. Ir al directorio de la aplicación
+cd /var/www/cinema
+
+# 3. Ver los logs del error actual
+sudo journalctl -u cinema --no-pager -n 20
+
+# 4. Arreglo rápido temporal - editar el archivo directamente
+nano app/blueprints/pago_mp.py
+
+# 5. Buscar estas líneas (Ctrl+W para buscar):
+#    return redirect(url_for('main.index'))
+# 
+# 6. Cambiar TODAS las apariciones de 'main.index' por 'main.inicio'
+#    Deberían ser 4 líneas aproximadamente
+
+# 7. Guardar y salir (Ctrl+X, luego Y, luego Enter)
+
+# 8. Reiniciar el servicio
+sudo systemctl restart cinema
+
+# 9. Verificar que funciona
+sudo systemctl status cinema
+
+# 10. Probar en el navegador:
+#     http://31.97.174.96/pago-mp/

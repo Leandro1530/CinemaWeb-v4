@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% block title %}Pago de entradas | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+/* Estilos para el formulario de pago - consistente con el resto */
+.payment-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 2px solid rgba(79, 109, 245, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4f6df5;
+  box-shadow: 0 0 0 2px rgba(79, 109, 245, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.amount-highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.payment-summary {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(79, 109, 245, 0.3);
+}
+
+.payment-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.payment-method {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(79, 109, 245, 0.3);
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.payment-method:hover {
+  border-color: #4f6df5;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(79, 109, 245, 0.2);
+}
+
+.payment-method.selected {
+  border-color: #4f6df5;
+  background: rgba(79, 109, 245, 0.1);
+  box-shadow: 0 10px 25px rgba(79, 109, 245, 0.3);
+}
+
+.payment-method-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.payment-method-title {
+  color: #e5e7eb;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.payment-method-desc {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.payment-method-benefit {
+  color: #4f6df5;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.card-form {
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 2rem;
+  margin-top: 2rem;
+  border: 1px solid rgba(79, 109, 245, 0.3);
+}
+
+.card-form.show {
+  display: block;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #9ca3af;
+  border: 2px solid rgba(156, 163, 175, 0.3);
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+.btn-secondary:hover {
+  border-color: #9ca3af;
+  color: #e5e7eb;
+  text-decoration: none;
+}
+
+.mercadopago-method {
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.1) 0%, rgba(0, 180, 216, 0.05) 100%);
+}
+
+.mercadopago-method .payment-method-icon {
+  color: #00b4d8;
+}
+
+.card-method {
+  background: linear-gradient(135deg, rgba(79, 109, 245, 0.1) 0%, rgba(79, 109, 245, 0.05) 100%);
+}
+
+.card-method .payment-method-icon {
+  color: #4f6df5;
+}
+
+@media (max-width: 768px) {
+  .payment-methods {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .payment-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+  <h1 style="color: #e5e7eb; text-align: center; margin-bottom: 2rem;">Finalizar Compra</h1>
+  
+  <!-- Resumen de compra -->
+  <div class="payment-summary">
+    <h3 style="color: #e5e7eb; margin-bottom: 1rem;">Resumen de tu compra</h3>
+    
+    <div style="color: #9ca3af; margin-bottom: 1rem;">
+      <strong>{{ seleccion.titulo }}</strong><br>
+      {{ seleccion.fecha }} - {{ seleccion.hora }}<br>
+      Sala {{ seleccion.sala }}<br>
+      Asientos: {{ seats|join(', ') }}
+    </div>
+    
+    {% if combos %}
+    <div style="color: #9ca3af; margin-bottom: 1rem;">
+      <strong>Combos:</strong><br>
+      {% for combo in combos %}
+      • {{ combo.nombre }} - ${{ "%.2f"|format(combo.precio) }}<br>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div style="border-top: 1px solid rgba(79, 109, 245, 0.3); padding-top: 1rem; margin-top: 1rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span style="color: #9ca3af;">Entradas ({{ seats|length }}):</span>
+        <span style="color: #e5e7eb;">${{ "%.2f"|format(total_entradas) }}</span>
+      </div>
+      {% if total_combos > 0 %}
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span style="color: #9ca3af;">Combos:</span>
+        <span style="color: #e5e7eb;">${{ "%.2f"|format(total_combos) }}</span>
+      </div>
+      {% endif %}
+      <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
+        <span style="color: #e5e7eb;">Total a pagar:</span>
+        <span class="amount-highlight">${{ total_formatted }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selección de método de pago -->
+  <div>
+    <h3 style="color: #e5e7eb; text-align: center; margin-bottom: 1.5rem;">Elige tu método de pago</h3>
+    
+    <div class="payment-methods">
+      <!-- MercadoPago -->
+      <div class="payment-method mercadopago-method" onclick="selectMercadoPago()">
+        <div class="payment-method-icon">💳</div>
+        <div class="payment-method-title">MercadoPago</div>
+        <div class="payment-method-desc">Tarjetas de crédito/débito, efectivo, transferencias bancarias</div>
+        <div class="payment-method-benefit">✓ Múltiples opciones de pago</div>
+      </div>
+      
+      <!-- Tarjeta Directa -->
+      <div class="payment-method card-method" onclick="selectCardPayment()">
+        <div class="payment-method-icon">💳</div>
+        <div class="payment-method-title">Tarjeta Directa</div>
+        <div class="payment-method-desc">Paga directamente con tu tarjeta de crédito o débito</div>
+        <div class="payment-method-benefit">✓ Procesamiento inmediato</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de tarjeta (inicialmente oculto) -->
+  <div id="card-form" class="card-form">
+    <h4 style="color: #e5e7eb; margin-bottom: 1.5rem;">Datos de la tarjeta</h4>
+    
+    <form method="POST" action="{{ url_for('pago.pago') }}">
+      <input type="hidden" name="email" value="{{ email or 'usuario@ejemplo.com' }}">
+      
+      <div class="payment-form-grid">
+        <div class="form-group full-width">
+          <label class="form-label" for="numero_tarjeta">Número de tarjeta</label>
+          <input type="text" id="numero_tarjeta" name="numero_tarjeta" class="form-input"
+                 placeholder="1234 5678 9012 3456" maxlength="19" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="mes_exp">Mes de vencimiento</label>
+          <select id="mes_exp" name="mes_exp" class="form-input" required>
+            <option value="">MM</option>
+            {% for mes in range(1, 13) %}
+            <option value="{{ '%02d'|format(mes) }}">{{ '%02d'|format(mes) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="anio_exp">Año de vencimiento</label>
+          <select id="anio_exp" name="anio_exp" class="form-input" required>
+            <option value="">AAAA</option>
+            {% for anio in range(2024, 2035) %}
+            <option value="{{ anio }}">{{ anio }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="cvv">Código de seguridad (CVV)</label>
+          <input type="text" id="cvv" name="cvv" class="form-input"
+                 placeholder="123" maxlength="4" required>
+        </div>
+        
+        <div class="form-group full-width">
+          <label class="form-label" for="nombre_tarjeta">Nombre del titular</label>
+          <input type="text" id="nombre_tarjeta" name="nombre_tarjeta" class="form-input"
+                 value="{{ nombre_tarjeta or 'NOMBRE APELLIDO' }}" placeholder="NOMBRE APELLIDO" required>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn-primary">
+        Procesar Pago - ${{ total_formatted }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Botones de navegación -->
+  <div style="text-align: center; margin-top: 2rem;">
+    <a href="{{ url_for('venta.combos') }}" class="btn-secondary">← Volver a combos</a>
+    <a href="{{ url_for('main.inicio') }}" class="btn-secondary">Ir al inicio</a>
+  </div>
+</div>
+
+<script>
+function selectMercadoPago() {
+  // Remover selección previa
+  document.querySelectorAll('.payment-method').forEach(method => {
+    method.classList.remove('selected');
+  });
+  
+  // Seleccionar MercadoPago
+  document.querySelector('.mercadopago-method').classList.add('selected');
+  
+  // Ocultar formulario de tarjeta
+  document.getElementById('card-form').classList.remove('show');
+  
+  // Redirigir a MercadoPago después de un momento
+  setTimeout(() => {
+    window.location.href = '/pago-mp/';
+  }, 500);
+}
+
+function selectCardPayment() {
+  // Remover selección previa
+  document.querySelectorAll('.payment-method').forEach(method => {
+    method.classList.remove('selected');
+  });
+  
+  // Seleccionar tarjeta
+  document.querySelector('.card-method').classList.add('selected');
+  
+  // Mostrar formulario de tarjeta
+  document.getElementById('card-form').classList.add('show');
+  
+  // Scroll suave al formulario
+  setTimeout(() => {
+    document.getElementById('card-form').scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }, 300);
+}
+
+// Formatear número de tarjeta
+document.addEventListener('DOMContentLoaded', function() {
+  const numeroTarjeta = document.getElementById('numero_tarjeta');
+  if (numeroTarjeta) {
+    numeroTarjeta.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+      e.target.value = formattedValue;
+    });
+  }
+  
+  // Validar CVV solo números
+  const cvv = document.getElementById('cvv');
+  if (cvv) {
+    cvv.addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+  }
+});
+</script>
+{% endblock %}

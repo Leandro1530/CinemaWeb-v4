@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <title>{% block title %}Admin | Cinema3D{% endblock %}</title>
+
+  <!-- Estilos globales ya existentes del sitio -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modern-ui.css') }}">
+  <!-- Theme final (debe ir último) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=10021">
+
+  <style>
+    /* Shell admin coherente con el theme */
+    .admin-shell{
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .admin-topbar{
+      position: sticky; top:0; z-index:1000;
+      background: rgba(18,21,27,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .admin-topbar .inner{
+      width:min(1200px,94%); margin-inline:auto; padding:.75rem 0;
+      display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    }
+    .admin-brand{ font-weight:900; letter-spacing:.3px; display:flex; align-items:center; gap:.5rem; }
+    .admin-brand .dot{ width:.6rem; height:.6rem; border-radius:999px; background:var(--primary); display:inline-block; }
+
+    .admin-actions{ display:flex; gap:.5rem; flex-wrap:wrap; }
+    .btn-primary, .btn-outline, .btn-ghost, .btn-secondary{
+      display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+      padding:.6rem 1rem; border-radius:10px; border:0; cursor:pointer; font-weight:700;
+      text-decoration:none; transition:transform .12s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .btn-primary{ background:linear-gradient(135deg,#4f6df5,#7c3aed); color:#fff; }
+    .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 10px 24px rgba(0,0,0,.35); }
+    .btn-outline{ background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.15); }
+    .btn-outline:hover{ filter:brightness(1.05); }
+    .btn-ghost{ background:transparent; color:#9fb1ff; border:1px dashed rgba(159,177,255,.35); }
+    .btn-ghost:hover{ background:rgba(159,177,255,.08); }
+    .btn-secondary{ background:rgba(156,163,175,.18); color:#cfd3db; border:1px solid rgba(156,163,175,.30); }
+    .btn-secondary:hover{ filter:brightness(1.08); }
+
+    .admin-main{ padding:clamp(14px,2vw,20px) 0; }
+    .admin-container{ width:min(1200px,94%); margin-inline:auto; }
+
+    .admin-footer{
+      border-top:1px solid rgba(255,255,255,.08);
+      background:rgba(18,21,27,.92);
+    }
+    .admin-footer .inner{
+      width:min(1200px,94%); margin-inline:auto; padding:.9rem 0;
+      color:var(--muted); font-size:.92rem; display:flex; justify-content:space-between; gap:.75rem; flex-wrap:wrap;
+    }
+  </style>
+
+  {% block head_extras %}{% endblock %}
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <div class="inner">
+        <a class="admin-brand" href="{{ url_for('admin.dashboard') }}">
+          <span class="dot"></span>
+          <span>ADMIN • Cinema3D</span>
+        </a>
+        <nav class="admin-actions">
+          {% block admin_actions %}
+          <a href="{{ url_for('admin.usuarios') }}" class="btn-outline">Usuarios</a>
+          <a href="{{ url_for('admin.funciones') }}" class="btn-outline">Funciones</a>
+          <a href="{{ url_for('venta.cartelera') }}" class="btn-ghost">Ir a la web</a>
+          {% endblock %}
+        </nav>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flash-stack" role="status" aria-live="polite">
+            {% for category, msg in messages %}
+              <div class="flash flash-{{ category|lower }}"><span>{{ msg }}</span></div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block admin_content %}{% endblock %}
+      </div>
+    </main>
+
+    <footer class="admin-footer">
+      <div class="inner">
+        <div>© {{ (now or none) and now.year or 2025 }} Cinema3D • Panel Administrativo</div>
+        <div>Sesión: {{ session.user_email or '—' }}</div>
+      </div>
+    </footer>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

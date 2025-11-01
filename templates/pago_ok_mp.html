@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Pago con Mercado Pago | Cinema3D{% endblock %}
+
+{% block head_extras %}
+<style>
+  /* ===== Pago MP Exitoso — diseño moderno y coherente ===== */
+  .okmp-wrap { max-width: 960px; margin-inline: auto; padding: clamp(16px,2.8vw,32px); }
+  .okmp-header { text-align:center; margin-bottom: clamp(18px,3vw,26px); }
+  .okmp-icon {
+    width:80px; height:80px; margin:0 auto 12px;
+    display:grid; place-items:center; border-radius:22px;
+    background:rgba(79,109,245,.12); border:1px solid rgba(79,109,245,.3);
+    font-size:2.4rem; color:#4f6df5;
+    box-shadow:0 8px 30px rgba(79,109,245,.2);
+  }
+
+  .okmp-header h1{ font-size: clamp(1.6rem,2.3vw,2rem); font-weight:800; margin:0; }
+  .okmp-header p{ color:var(--muted); margin:0; }
+
+  .okmp-card{
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius:16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    backdrop-filter: blur(18px);
+    padding: clamp(18px,2vw,28px);
+  }
+
+  .status-badge{
+    display:inline-block; padding:6px 12px;
+    border-radius:20px; font-weight:700; font-size:.85rem;
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .status-aprobado{ background:rgba(34,197,94,.12); color:#22c55e; border:1px solid rgba(34,197,94,.3); }
+  .status-pendiente{ background:rgba(234,179,8,.12); color:#facc15; border:1px solid rgba(234,179,8,.3); }
+  .status-rechazado{ background:rgba(239,68,68,.12); color:#ef4444; border:1px solid rgba(239,68,68,.3); }
+
+  .detail-list{ display:grid; gap:8px; margin-top:10px; }
+  .detail-row{ display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); padding:6px 0; }
+  .detail-row:last-child{ border-bottom:none; }
+
+  .timeline{ margin-top:16px; display:grid; gap:10px; }
+  .timeline-item{
+    display:flex; align-items:center; gap:12px;
+    background: rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; padding:10px 12px;
+  }
+  .timeline-icon{
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:1rem;
+  }
+  .timeline-completed{ background:#22c55e; }
+  .timeline-pending{ background:#facc15; }
+
+  .qr-section{
+    text-align:center;
+    background: rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    padding:18px; margin-top:22px;
+  }
+  .qr-box{
+    width:150px; height:150px; margin:18px auto;
+    display:flex; align-items:center; justify-content:center;
+    border:2px dashed rgba(255,255,255,.25); border-radius:12px;
+    color:var(--muted);
+  }
+
+  .actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:20px; }
+  .btn{
+    padding:.85rem 1.2rem; border-radius:10px; font-weight:700;
+    text-decoration:none; display:inline-block;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .btn-primary{ background:linear-gradient(135deg,#4f6df5,#7c3aed); color:#fff; }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.3); }
+  .btn-ghost{ border:1px solid rgba(255,255,255,.2); color:var(--text); }
+  .btn-ghost:hover{ background:rgba(255,255,255,.08); }
+
+  .alert-info{
+    margin-top:18px; padding:12px 14px;
+    border-radius:12px;
+    background:rgba(59,130,246,.12);
+    border:1px solid rgba(59,130,246,.25);
+  }
+  .alert-info h3{ margin:0 0 6px; color:#93c5fd; font-size:1rem; }
+  .alert-info ul{ margin:0; padding-left:18px; color:var(--muted); }
+
+  @media(max-width:768px){
+    .detail-row{ flex-direction:column; align-items:flex-start; gap:4px; }
+    .btn{ width:100%; text-align:center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container okmp-wrap">
+  <div class="okmp-header">
+    <div class="okmp-icon">
+      {% if transaccion.estado == 'APROBADO' %}✅
+      {% elif transaccion.estado == 'PENDIENTE' %}⏳
+      {% else %}ℹ️{% endif %}
+    </div>
+    {% if transaccion.estado == 'APROBADO' %}
+      <h1>¡Pago Exitoso!</h1>
+      <p>Tu compra ha sido procesada correctamente. ¡Disfrutá la función!</p>
+    {% elif transaccion.estado == 'PENDIENTE' %}
+      <h1>Pago en Proceso</h1>
+      <p>Estamos verificando tu pago, recibirás un email cuando se confirme.</p>
+    {% else %}
+      <h1>Estado del Pago</h1>
+      <p>Tu pago no se completó correctamente.</p>
+    {% endif %}
+  </div>
+
+  <section class="okmp-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h3 style="margin:0;">Detalles de la transacción</h3>
+      <span class="status-badge status-{{ transaccion.estado.lower() }}">{{ transaccion.estado }}</span>
+    </div>
+
+    <div class="detail-list">
+      <div class="detail-row"><strong>ID Transacción:</strong><span>#{{ transaccion.id }}</span></div>
+      {% if transaccion.external_reference %}
+      <div class="detail-row"><strong>Referencia:</strong><span>{{ transaccion.external_reference }}</span></div>
+      {% endif %}
+      <div class="detail-row"><strong>Email:</strong><span>{{ transaccion.email_cliente }}</span></div>
+      <div class="detail-row"><strong>Película:</strong><span>{{ transaccion.pelicula or 'N/A' }}</span></div>
+      {% if transaccion.fecha_funcion and transaccion.hora_funcion %}
+      <div class="detail-row"><strong>Función:</strong><span>{{ transaccion.fecha_funcion }} · {{ transaccion.hora_funcion }}</span></div>
+      {% endif %}
+      {% if transaccion.sala %}
+      <div class="detail-row"><strong>Sala:</strong><span>{{ transaccion.sala }}</span></div>
+      {% endif %}
+      {% if transaccion.asientos_json %}
+        {% set asientos = transaccion.asientos_json | from_json %}
+        {% if asientos %}
+        <div class="detail-row">
+          <strong>Asientos:</strong>
+          <span>{% for asiento in asientos %}{{ asiento.numero }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+        </div>
+        {% endif %}
+      {% endif %}
+      <div class="detail-row"><strong>Total Pagado:</strong><span class="amount-highlight">${{ "%.2f"|format(transaccion.total_pesos) }}</span></div>
+      <div class="detail-row"><strong>Fecha:</strong><span>{{ transaccion.created_at.strftime('%d/%m/%Y %H:%M') if transaccion.created_at else 'N/A' }}</span></div>
+      {% if transaccion.mp_payment_id %}
+      <div class="detail-row"><strong>ID Pago MP:</strong><span>{{ transaccion.mp_payment_id }}</span></div>
+      {% endif %}
+      {% if transaccion.brand and transaccion.last4 %}
+      <div class="detail-row"><strong>Método:</strong><span>{{ transaccion.brand }} ****{{ transaccion.last4 }}</span></div>
+      {% endif %}
+    </div>
+
+    <!-- Timeline -->
+    {% if transaccion.estado == 'APROBADO' %}
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon timeline-completed"><i class="fas fa-check"></i></div>
+        <div><strong>Pago aprobado</strong><br><small>Tu pago fue procesado exitosamente</small></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon timeline-completed"><i class="fas fa-envelope"></i></div>
+        <div><strong>Comprobante enviado</strong><br><small>Revisá tu email con el QR y comprobante</small></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon timeline-completed"><i class="fas fa-ticket-alt"></i></div>
+        <div><strong>Asientos confirmados</strong><br><small>Tu reserva está lista</small></div>
+      </div>
+    </div>
+    {% elif transaccion.estado == 'PENDIENTE' %}
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon timeline-completed"><i class="fas fa-check"></i></div>
+        <div><strong>Orden creada</strong><br><small>Tu orden fue registrada correctamente</small></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon timeline-pending"><i class="fas fa-clock"></i></div>
+        <div><strong>Procesando pago</strong><br><small>Esperando confirmación del pago</small></div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if transaccion.estado == 'APROBADO' %}
+    <div class="qr-section">
+      <h3>🎟 Código QR para ingreso</h3>
+      <p class="muted">Presentá este código en el cine</p>
+      <div class="qr-box">QR</div>
+      <small class="muted">También fue enviado por email</small>
+    </div>
+    {% endif %}
+
+    <!-- Botones -->
+    <div class="actions">
+      {% if transaccion.estado == 'APROBADO' %}
+      <a href="{{ url_for('archivos.descargar_comprobante', id=transaccion.id) }}" class="btn btn-primary">
+        <i class="fas fa-download"></i> Descargar comprobante
+      </a>
+      {% endif %}
+      <a href="{{ url_for('main.index') }}" class="btn btn-ghost">Nueva compra</a>
+      <a href="{{ url_for('main.cartelera') }}" class="btn btn-ghost">Ver cartelera</a>
+    </div>
+
+    <div class="alert-info">
+      <h3><i class="fas fa-info-circle"></i> Información importante</h3>
+      <ul>
+        {% if transaccion.estado == 'APROBADO' %}
+        <li>Llegá 15 minutos antes de la función.</li>
+        <li>Presentá tu QR o comprobante en la entrada.</li>
+        <li>Conservá tu comprobante para consultas.</li>
+        {% elif transaccion.estado == 'PENDIENTE' %}
+        <li>Te avisaremos por email cuando se confirme el pago.</li>
+        <li>El proceso puede demorar hasta 24 horas.</li>
+        <li>Tus asientos están temporalmente reservados.</li>
+        {% endif %}
+        <li>Ante dudas, contactá a soporte.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+{% if transaccion.estado == 'PENDIENTE' %}
+setInterval(function(){
+  fetch('/pago/estado/{{ transaccion.id }}')
+    .then(r=>r.json())
+    .then(data=>{ if(data.status!=='PENDIENTE') location.reload(); })
+    .catch(e=>console.log('Error verificando estado',e));
+},30000);
+{% endif %}
+</script>
+{% endblock %}

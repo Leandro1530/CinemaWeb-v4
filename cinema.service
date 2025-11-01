@@ -1,0 +1,38 @@
+[Unit]
+Description=Cinema App (Flask con Gunicorn)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/cinema
+Environment=PATH=/var/www/cinema/venv/bin
+ExecStart=/var/www/cinema/venv/bin/gunicorn --config /var/www/cinema/gunicorn.conf.py wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+# Configuración de seguridad
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/cinema/static /var/www/cinema/logs /var/www/cinema/instance /var/log/cinema /var/run/cinema
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# Límites de recursos
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Variables de entorno
+Environment=FLASK_ENV=production
+EnvironmentFile=/var/www/cinema/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,236 @@
+/* ======== CINEMA3D THEME (limpio) ======== */
+:root{
+  --bg:#0f1115; --surface:#12151b; --card:#161a22;
+  --text:#eef2f7; --muted:#a7b1c2;
+  --primary:#7cbc29; --primary-600:#6aa61f; --primary-700:#5a8f1b;
+  --danger:#ef4444; --warn:#f59e0b; --ok:#22c55e;
+  --radius:16px; --gap:1rem;
+  --shadow-sm:0 6px 16px rgba(0,0,0,.25);
+  --shadow-md:0 10px 30px rgba(0,0,0,.35);
+}
+
+/* Reset básico */
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{
+  margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background: radial-gradient(1200px 800px at 10% 0%,#141926 0%,var(--bg) 40%),
+             linear-gradient(180deg,#0d1016,var(--bg));
+}
+a{ color:inherit; text-decoration:none }
+img{ max-width:100%; height:auto; display:block }
+::selection{ background:#273c11; color:#fff }
+
+/* Utilidades */
+.yx-container{ width:min(1100px,92%); margin-inline:auto }
+.yx-section{ padding:clamp(1rem,3vw,2rem) 0 }
+.yx-grid{ display:grid; gap:var(--gap) }
+.yx-grid-2{ grid-template-columns:repeat(2,1fr) }
+@media (max-width:640px){ .yx-grid-2{ grid-template-columns:1fr } }
+.yx-center{ display:grid; place-items:center }
+.yx-muted{ color:var(--muted) }
+.yx-mt-2{ margin-top:1rem }
+.yx-mb-3{ margin-bottom:1.5rem }
+
+/* Surfaces */
+.yx-surface{
+  background:var(--surface);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--radius);
+  padding:clamp(1rem,2vw,1.5rem);
+  box-shadow:var(--shadow-sm);
+}
+.yx-hero{ background:linear-gradient(180deg,rgba(124,188,41,.12),transparent 55%) }
+.yx-title{ margin:0 0 .4rem; font-weight:800; letter-spacing:.2px }
+.welcome-title{ font-size:clamp(1.9rem,3.5vw,3rem) }
+
+/* Formularios */
+.yx-field{ display:flex; flex-direction:column; gap:.4rem }
+.yx-label{ font-weight:600; color:#d6dee9 }
+.yx-select,.yx-input,.yx-textarea{
+  width:100%; padding:.9rem 1rem; border-radius:12px; background:#101624;
+  border:1px solid rgba(255,255,255,.10); color:var(--text);
+}
+.yx-select:focus,.yx-input:focus,.yx-textarea:focus{
+  outline:none; border-color:rgba(124,188,41,.5); box-shadow:0 0 0 3px rgba(124,188,41,.18)
+}
+
+/* Botones */
+.yx-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  padding:.7rem 1rem; border-radius:999px; font-weight:700; border:0; cursor:pointer;
+  transition:transform .08s ease, box-shadow .18s ease, background .18s ease;
+}
+.yx-btn:active{ transform:translateY(1px) }
+.yx-btn--primary{
+  background:linear-gradient(180deg,var(--primary),var(--primary-600));
+  color:#fff; box-shadow:0 8px 16px rgba(124,188,41,.25);
+}
+.yx-btn--primary:hover{ background:linear-gradient(180deg,var(--primary-600),var(--primary-700)) }
+.yx-btn--ghost{ background:rgba(255,255,255,.10); color:#fff }
+.yx-btn--ghost:hover{ background:rgba(255,255,255,.18) }
+
+/* ===== NAVBAR (2 filas) ===== */
+.yx-nav{
+  backdrop-filter:blur(8px);
+  background:rgba(18,21,27,.92);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.yx-nav--fixed{ position:fixed; top:0; left:0; right:0; z-index:1000 }
+.yx-nav-spacer{ height:96px } /* alto total nav */
+
+.nav-grid{
+  display:grid;
+  grid-template-rows:auto auto; /* fila superior + fila inferior */
+  gap:.35rem;
+  padding:.5rem 0 .7rem;
+}
+
+/* Fila superior: brand + toggle (sin acciones) */
+.nav-top{
+  display:grid;
+  grid-template-columns:1fr auto auto; /* brand | (spacer) | toggle */
+  align-items:center;
+  gap:.75rem;
+}
+.brand{ display:flex; align-items:center; gap:.5rem }
+.yx-nav-brand{ font-weight:800; font-size:1.15rem; color:#fff }
+.dot{ width:.6rem; height:.6rem; border-radius:999px; background:var(--primary); display:inline-block }
+.yx-nav-toggle{ display:none } /* oculto en desktop */
+
+/* Fila inferior: izquierda + derecha EN LA MISMA LÍNEA */
+.nav-bottom{
+  display:grid;
+  grid-template-columns:1fr auto; /* izquierda crece, derecha al borde */
+  align-items:center;
+  column-gap:1rem;
+}
+.menu-left{ display:flex; align-items:center; gap:.6rem }
+.menu-left a{
+  background:rgba(255,255,255,.10);
+  padding:.58rem 1rem; border-radius:10px; color:#fff;
+}
+.menu-left a:hover{ background:rgba(255,255,255,.18) }
+
+/* ÚNICO bloque de acciones a la derecha */
+.actions-right{
+  display:flex; align-items:center; gap:.6rem;
+  justify-self:end;
+}
+
+/* Evitar acciones duplicadas arriba por si algún CSS viejo las “aparece” */
+.nav-top .actions-right{ display:none !important; }
+
+/* Responsive navbar */
+@media (max-width:900px){
+  .nav-bottom{ display:none }                 /* en móvil, la fila inferior no se usa */
+  .yx-nav-toggle{ display:inline-flex; justify-self:end }
+
+  .mobile-menu{
+    position:absolute; left:0; right:0; top:96px;
+    background:rgba(18,21,27,.98);
+    border-top:1px solid rgba(255,255,255,.08);
+    padding:.75rem 0; box-shadow:var(--shadow-md);
+  }
+  .mobile-menu-inner{ display:grid; gap:.5rem }
+  .mobile-menu .hstack{ display:flex; gap:.5rem; flex-wrap:wrap }
+  .mobile-menu a{
+    background:rgba(255,255,255,.10);
+    padding:.5rem .9rem; border-radius:10px; color:#fff;
+  }
+  .mobile-menu a:hover{ background:rgba(255,255,255,.18) }
+}
+
+/* ===== Bienvenida ===== */
+.yx-center-page{
+  min-height:calc(100dvh - 96px - 120px);
+  display:grid; place-items:start center;
+}
+.welcome-wrap{ width:min(1000px,95%) }
+
+/* Footer look básico (si lo usás) */
+.yx-footer{ background:#0d1016; border-top:1px solid rgba(255,255,255,.06); color:var(--muted); padding:2rem 0; text-align:center }
+.yx-footer a{ color:#cfe6a7 } .yx-footer a:hover{ color:#e6f5c9 }
+
+
+/* === CARTELERA / MOVIE GRID === */
+.movie-grid{
+  display:grid; gap:1rem;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+}
+@media (max-width:1200px){ .movie-grid{ grid-template-columns: repeat(3,1fr); } }
+@media (max-width:900px){  .movie-grid{ grid-template-columns: repeat(2,1fr); } }
+@media (max-width:560px){  .movie-grid{ grid-template-columns: 1fr; } }
+
+.movie-card{
+  background: var(--card, #161a22);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
+  overflow:hidden;
+  box-shadow: var(--shadow-sm);
+  display:flex; flex-direction:column;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.movie-card:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(124,188,41,.35);
+}
+
+/* Poster */
+.movie-card .poster{
+  position:relative; aspect-ratio: 2/3; /* recorte uniforme */
+  background:#0d1016; overflow:hidden;
+}
+.movie-card .poster img{
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.movie-card .badge{
+  position:absolute; left:.5rem; top:.5rem;
+  padding:.25rem .5rem; border-radius:999px;
+  font-size:.75rem; font-weight:700;
+  background:#1b2332; border:1px solid rgba(255,255,255,.12);
+  color:#cfe6a7;
+}
+
+/* Contenido */
+.movie-card .body{ padding: .9rem; display:flex; flex-direction:column; gap:.4rem; }
+.movie-title{
+  font-weight:800; margin:0; line-height:1.2;
+  font-size: clamp(1rem, 2.2vw, 1.1rem);
+}
+.movie-meta{
+  display:flex; gap:.5rem; flex-wrap:wrap; color:var(--muted); font-size:.92rem;
+}
+.movie-meta .chip{
+  padding:.15rem .5rem; border-radius:999px; background:#101624;
+  border:1px solid rgba(255,255,255,.08);
+}
+.movie-desc{
+  margin:.3rem 0 0; color:var(--muted);
+  display:-webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow:hidden;
+}
+
+/* Acciones */
+.movie-actions{
+  margin-top:.6rem;
+  display:flex; gap:.5rem; align-items:center; justify-content:space-between;
+}
+.movie-actions .left{ display:flex; gap:.4rem; align-items:center; }
+.movie-rating{ font-weight:700; }
+.movie-cta{ display:flex; gap:.5rem; }
+.movie-cta .yx-btn{ padding:.6rem .9rem; }
+
+/* Barra de filtro (opcional) */
+.filter-bar{
+  display:flex; gap:.6rem; align-items:center; justify-content:space-between;
+  margin-bottom: 1rem; flex-wrap:wrap;
+}
+.filter-bar .group{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.filter-bar .yx-input, .filter-bar .yx-select{ min-width: 180px; }
+@media (max-width:560px){
+  .filter-bar{ align-items:stretch; }
+  .filter-bar .group{ width:100%; }
+  .filter-bar .yx-input, .filter-bar .yx-select{ flex:1; min-width:0; }
+}
