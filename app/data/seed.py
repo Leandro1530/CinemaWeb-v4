@@ -47,7 +47,7 @@ MOVIES = [
 ]
 
 COMBOS_CATALOG = [
-    {"id": 1, "nombre": "Combo 1", "descripcion": "Popcorn + Bebida", "precio": 1500},
-    {"id": 2, "nombre": "Combo 2", "descripcion": "2× Popcorn + 2× Bebida", "precio": 2500},
-    {"id": 3, "nombre": "Combo 3", "descripcion": "Popcorn + Nachos + Bebida", "precio": 2000},
+    {"id": 1, "nombre": "Combo 1", "descripcion": "Pochoclo + Bebida", "precio": 1500},
+    {"id": 2, "nombre": "Combo 2", "descripcion": "1× Pochoclo + 2× Bebida", "precio": 2500},
+    {"id": 3, "nombre": "Combo 3", "descripcion": "Pochoclo + Dorito + Bebida", "precio": 2000},
 ]

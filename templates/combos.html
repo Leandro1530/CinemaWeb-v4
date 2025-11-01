@@ -35,14 +35,55 @@
     border-radius:16px;
     box-shadow:0 8px 24px rgba(0,0,0,.35);
     transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+    overflow:hidden;
   }
   .card-c:hover{ transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.4); border-color:rgba(124,188,41,.35);}
   .card-c.selected{ border-color:#7cbc29; box-shadow:0 0 0 2px rgba(124,188,41,.3) inset; }
 
+  /* IMAGEN REAL del combo */
   .card-img{
-    background:linear-gradient(135deg,#4f6df5,#3b56e8);
-    height:80px; display:flex; align-items:center; justify-content:center;
+    width:100%;
+    height:220px;
+    overflow:hidden;
+    background:linear-gradient(135deg,#1a1f35,#0f1428);
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
   }
+  .card-img img{
+    max-width:100%;
+    max-height:100%;
+    width:auto;
+    height:auto;
+    object-fit:contain;
+    object-position:center;
+    transition:transform .3s ease;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.4));
+  }
+  .card-c:hover .card-img img{
+    transform:scale(1.08);
+  }
+  
+  /* Badge de cantidad sobre la imagen */
+  .card-img-badge{
+    position:absolute;
+    top:12px;
+    right:12px;
+    background:rgba(124,188,41,.95);
+    color:#fff;
+    font-weight:800;
+    font-size:.85rem;
+    padding:6px 12px;
+    border-radius:999px;
+    display:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .card-c.selected .card-img-badge{
+    display:block;
+  }
+
   .card-body{ padding:16px; display:flex; flex-direction:column; gap:10px; text-align:center; }
   .card-head{ display:flex; align-items:center; justify-content:space-between; }
   .c-name{ margin:0; font-weight:800; font-size:1.05rem; }
@@ -96,10 +137,38 @@
     display:flex; justify-content:center; align-items:center; gap:12px;
     margin-top:clamp(18px,3vw,24px); flex-wrap:wrap;
   }
-  .btn-secondary{
-    background:rgba(156,163,175,.18); color:#cfd3db; border:1px solid rgba(156,163,175,.30);
+  .btn-back{
+    background:rgba(156,163,175,.18); 
+    color:#cfd3db; 
+    border:1px solid rgba(156,163,175,.30);
+    padding:10px 24px;
+    border-radius:8px;
+    font-weight:600;
+    text-decoration:none;
+    transition:all .18s ease;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
   }
-  .btn-secondary:hover{ filter:brightness(1.08); }
+  .btn-back:hover{ 
+    filter:brightness(1.08); 
+    background:rgba(156,163,175,.25);
+    border-color:rgba(156,163,175,.4);
+  }
+  .btn-secondary{
+    background:rgba(156,163,175,.18); 
+    color:#cfd3db; 
+    border:1px solid rgba(156,163,175,.30);
+    padding:10px 24px;
+    border-radius:8px;
+    font-weight:600;
+    transition:all .18s ease;
+  }
+  .btn-secondary:hover{ 
+    filter:brightness(1.08);
+    background:rgba(156,163,175,.25);
+    border-color:rgba(156,163,175,.4);
+  }
 </style>
 {% endblock %}
 
@@ -108,7 +177,7 @@
   <!-- HERO -->
   <section class="hero-card">
     <h1 class="hero-title">Elegí tus combos</h1>
-    <p class="hero-sub">Agregá snacks para disfrutar durante la función</p>
+    <p class="hero-sub">No te quedes con ganas: agregá algo rico para la película</p>
   </section>
 
   <!-- GRID + FORM -->
@@ -118,11 +187,14 @@
         {% if combos %}
           {% for c in combos %}
           <article class="card-c" data-combo-id="{{ c.id }}">
+            <!-- IMAGEN DEL COMBO desde static/images/combos -->
             <div class="card-img">
-              <svg width="40" height="40" fill="white" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM1 2v2h2l3.6 7.59-1.35 2.45c-.17.29-.25.62-.25.96a2 2 0 0 0 2 2h12v-2H7.42a.25.25 0 0 1-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21L4.27 2H1Zm16 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
-              </svg>
+              <img src="{{ url_for('static', filename='images/combos/Combo ' + c.id|string + '.png') }}" 
+                   alt="{{ c.nombre }}"
+                   onerror="this.src='{{ url_for('static', filename='images/combos/default.jpg') }}'">
+              <div class="card-img-badge" id="badge-{{ c.id }}">×0</div>
             </div>
+
             <div class="card-body">
               <div class="card-head">
                 <h3 class="c-name">{{ c.nombre }}</h3>
@@ -160,7 +232,7 @@
 
       <!-- Acciones -->
       <div class="actions">
-        <a class="btn-ghost" href="{{ url_for('venta.reserva_asientos') }}">← Volver</a>
+        <a class="btn-back" href="{{ url_for('venta.reserva_asientos') }}">← Volver</a>
         <button class="btn-secondary" type="button" id="skip-combos">Saltar combos</button>
         <button class="btn-primary" type="submit" id="confirm-combos">Continuar →</button>
       </div>
@@ -194,11 +266,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const combo = combosData.find(c => c.id == id);
     const totalEl = document.getElementById('total-'+id);
     const card = document.querySelector('.card-c[data-combo-id="'+id+'"]');
+    const badge = document.getElementById('badge-'+id);
     if(!combo || !totalEl || !card) return;
 
     const total = qty * (combo.precio||0);
     totalEl.textContent = format(total);
     card.classList.toggle('selected', qty > 0);
+    
+    // Actualizar badge con cantidad
+    if(badge){
+      badge.textContent = '×' + qty;
+    }
   }
 
   function updateSummary(){
