@@ -69,11 +69,22 @@ def create_app() -> Flask:
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 7  # 7 días
 
     # Mail / SMTP (usado por Flask-Mail y nuestro emailer)
-    app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "localhost")
-    app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", "25"))
-    app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME", "")
-    app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD", "")
-    app.config["MAIL_USE_TLS"] = _bool_env("MAIL_USE_TLS", True)
+    # Fallback: si faltan MAIL_*, intenta leer desde SMTP_* (retrocompatibilidad)
+    app.config["MAIL_SERVER"] = (
+        os.getenv("MAIL_SERVER") or os.getenv("SMTP_SERVER") or "localhost"
+    )
+    app.config["MAIL_PORT"] = int(
+        os.getenv("MAIL_PORT") or os.getenv("SMTP_PORT") or "25"
+    )
+    app.config["MAIL_USERNAME"] = (
+        os.getenv("MAIL_USERNAME") or os.getenv("SMTP_USERNAME") or ""
+    )
+    app.config["MAIL_PASSWORD"] = (
+        os.getenv("MAIL_PASSWORD") or os.getenv("SMTP_PASSWORD") or ""
+    )
+    app.config["MAIL_USE_TLS"] = (
+        _bool_env("MAIL_USE_TLS") if os.getenv("MAIL_USE_TLS") else _bool_env("SMTP_USE_TLS", True)
+    )
     app.config["MAIL_USE_SSL"] = _bool_env("MAIL_USE_SSL", False)
     app.config["MAIL_DEFAULT_SENDER"] = (
         os.getenv("SENDER_NAME", "Cinema3D"),
