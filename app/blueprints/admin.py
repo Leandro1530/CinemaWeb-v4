@@ -26,15 +26,29 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 def funciones():
     """Lista todas las funciones disponibles para administrar"""
     try:
-        # Obtener todas las funciones desde la base de datos
+        # Obtener parámetro para mostrar todas o solo futuras
+        mostrar_todas = request.args.get('todas', 'false').lower() == 'true'
+        
+        # Obtener funciones desde la base de datos
         from datetime import datetime, date
         
-        funciones_db = db_mod.query_all("""
-            SELECT id, pelicula_id, titulo, genero, duracion, clasificacion,
-                   poster, descripcion, fecha, hora, sala, precio, asientos_disponibles
-            FROM funciones
-            ORDER BY fecha, hora
-        """)
+        if mostrar_todas:
+            # Mostrar todas las funciones
+            funciones_db = db_mod.query_all("""
+                SELECT id, pelicula_id, titulo, genero, duracion, clasificacion,
+                       poster, descripcion, fecha, hora, sala, precio, asientos_disponibles
+                FROM funciones
+                ORDER BY fecha DESC, hora DESC
+            """)
+        else:
+            # Solo funciones futuras (desde ayer para incluir funciones de hoy)
+            funciones_db = db_mod.query_all("""
+                SELECT id, pelicula_id, titulo, genero, duracion, clasificacion,
+                       poster, descripcion, fecha, hora, sala, precio, asientos_disponibles
+                FROM funciones
+                WHERE fecha >= date('now', '-1 day')
+                ORDER BY fecha, hora
+            """)
         
         funciones_data = []
         for funcion in funciones_db:
@@ -75,7 +89,10 @@ def funciones():
             'pasadas': pasadas
         }
         
-        return render_template("admin/funciones.html", funciones=funciones_data, stats=stats)
+        return render_template("admin/funciones.html", 
+                             funciones=funciones_data, 
+                             stats=stats, 
+                             mostrar_todas=mostrar_todas)
     except Exception as e:
         flash(f"Error al cargar funciones: {str(e)}", "error")
         return redirect(url_for('main.bienvenida'))

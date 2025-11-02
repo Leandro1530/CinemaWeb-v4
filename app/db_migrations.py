@@ -8,6 +8,37 @@ import sqlite3
 from flask import current_app
 from app.db import get_conn, execute, executescript
 
+def migrate_add_trailer_url():
+    """
+    Migración para agregar la columna trailer_url a la tabla funciones
+    """
+    try:
+        conn = get_conn()
+        
+        # Verificar si la columna trailer_url ya existe
+        cursor = conn.execute("PRAGMA table_info(funciones)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'trailer_url' not in columns:
+            # Agregar la columna trailer_url
+            conn.execute('ALTER TABLE funciones ADD COLUMN trailer_url TEXT')
+            conn.commit()
+            print("✅ Columna trailer_url agregada a la tabla funciones")
+        else:
+            print("⏭️ La columna trailer_url ya existe")
+            
+    except Exception as e:
+        print(f"❌ Error en migración trailer_url: {e}")
+
+def migrate_database():
+    """
+    Ejecuta todas las migraciones necesarias
+    """
+    print("🔄 Ejecutando migraciones de base de datos...")
+    migrate_add_mercadopago_support()
+    migrate_add_trailer_url()
+    print("✅ Migraciones completadas")
+
 def migrate_add_mercadopago_support():
     """
     Migración para agregar soporte completo de MercadoPago
@@ -314,4 +345,57 @@ def load_seed_data():
         
     except Exception as e:
         current_app.logger.error(f"❌ Error cargando datos semilla: {str(e)}")
+        raise
+
+
+def migrate_add_password_reset_support():
+    """
+    Migración para agregar soporte de recuperación de contraseñas
+    Agrega tabla password_reset_tokens
+    """
+    
+    try:
+        conn = get_conn()
+        
+        # Verificar si la tabla password_reset_tokens ya existe
+        cur = conn.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='password_reset_tokens'
+        """)
+        table_exists = cur.fetchone() is not None
+        
+        if table_exists:
+            current_app.logger.info("📊 Tabla password_reset_tokens ya existe")
+            return
+        
+        current_app.logger.info("📊 Creando tabla password_reset_tokens...")
+        
+        # Crear tabla de tokens de recuperación
+        execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL,
+                token      TEXT    NOT NULL,
+                expires_at INTEGER NOT NULL,
+                used       INTEGER DEFAULT 0,
+                created_at INTEGER DEFAULT (strftime('%s', 'now')),
+                FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+            )
+        """, commit=False)
+        
+        # Crear índices
+        execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token)
+        """, commit=False)
+        
+        execute("""
+            CREATE INDEX IF NOT EXISTS idx_reset_user ON password_reset_tokens(user_id)
+        """, commit=False)
+        
+        # Confirmar cambios
+        conn.commit()
+        current_app.logger.info("✅ Tabla password_reset_tokens creada correctamente")
+        
+    except Exception as e:
+        current_app.logger.error(f"❌ Error creando tabla password_reset_tokens: {str(e)}")
         raise

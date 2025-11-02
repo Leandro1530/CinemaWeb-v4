@@ -69,15 +69,15 @@ def create_app() -> Flask:
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 7  # 7 días
 
     # Mail / SMTP (usado por Flask-Mail y nuestro emailer)
-    app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "localhost")
-    app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", "25"))
-    app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME", "")
-    app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD", "")
-    app.config["MAIL_USE_TLS"] = _bool_env("MAIL_USE_TLS", True)
-    app.config["MAIL_USE_SSL"] = _bool_env("MAIL_USE_SSL", False)
+    app.config["MAIL_SERVER"] = os.getenv("SMTP_SERVER", "localhost")
+    app.config["MAIL_PORT"] = int(os.getenv("SMTP_PORT", "25"))
+    app.config["MAIL_USERNAME"] = os.getenv("SMTP_USER", "")
+    app.config["MAIL_PASSWORD"] = os.getenv("SMTP_PASS", "")
+    app.config["MAIL_USE_TLS"] = _bool_env("SMTP_TLS", True)
+    app.config["MAIL_USE_SSL"] = _bool_env("SMTP_SSL", False)
     app.config["MAIL_DEFAULT_SENDER"] = (
         os.getenv("SENDER_NAME", "Cinema3D"),
-        os.getenv("MAIL_USERNAME", ""),
+        os.getenv("SMTP_USER", ""),
     )
     # EMAIL_DEBUG=1 => NO enviamos correos, solo log informativo (ver emailer.py)
     app.config["EMAIL_DEBUG"] = _bool_env("EMAIL_DEBUG", True)
@@ -170,7 +170,7 @@ def create_app() -> Flask:
     # ----------------- DB & runtime bootstrap ----------------- #
     with app.app_context():
         # Verificar y ejecutar migraciones de MercadoPago si es necesario
-        from app.db_migrations import check_migration_needed, migrate_add_mercadopago_support
+        from app.db_migrations import check_migration_needed, migrate_add_mercadopago_support, migrate_add_password_reset_support
         try:
             if check_migration_needed():
                 app.logger.info("Ejecutando migración de MercadoPago...")
@@ -180,6 +180,13 @@ def create_app() -> Flask:
                     app.logger.error("❌ Error en migración de MercadoPago")
         except Exception as e:
             app.logger.warning("No se pudo verificar/aplicar migración MP: %s", e)
+
+        # Ejecutar migración de recuperación de contraseñas
+        try:
+            app.logger.info("Ejecutando migración de recuperación de contraseñas...")
+            migrate_add_password_reset_support()
+        except Exception as e:
+            app.logger.warning("No se pudo aplicar migración de reset de contraseñas: %s", e)
 
         # asegura tablas (usuarios, transacciones, seats, etc.)
         db_mod.create_schema()

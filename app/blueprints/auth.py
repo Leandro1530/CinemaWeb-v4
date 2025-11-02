@@ -9,6 +9,10 @@ Rutas:
 - GET  /logout
 - GET  /registro
 - POST /registro
+- GET  /forgot-password
+- POST /forgot-password
+- GET  /reset-password/<token>
+- POST /reset-password/<token>
 
 Integra con la sesión:
 - session["user"] = {id, nombre, apellido, email, nro_documento, rol}
@@ -17,7 +21,7 @@ Integra con la sesión:
 Dependencias:
 - app/db.py  -> query_one, execute, upsert_usuario
 - werkzeug.security -> generate_password_hash, check_password_hash
-- Plantillas: templates/login.html, templates/registro.html
+- Plantillas: templates/login.html, templates/registro.html, templates/forgot_password.html, templates/reset_password.html
 """
 
 from __future__ import annotations
@@ -422,3 +426,154 @@ def require_admin():
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+# =======================================================================
+# Password Recovery Routes
+# =======================================================================
+
+@bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    """
+    Formulario para solicitar recuperación de contraseña.
+    Acepta email o DNI.
+    """
+    if request.method == "GET":
+        return render_template("forgot_password.html", errores=None, exito=None)
+
+    # POST
+    login_id = (request.form.get("login_id") or "").strip()
+    
+    if not login_id:
+        return render_template(
+            "forgot_password.html",
+            errores=["Debes ingresar tu email o DNI."],
+            exito=None,
+            login_id=login_id
+        ), 400
+
+    # Buscar usuario por email o DNI
+    user = _find_user_by_login(login_id)
+    
+    if not user:
+        # Por seguridad, no revelamos si el usuario existe o no
+        return render_template(
+            "forgot_password.html",
+            errores=None,
+            exito="Si el email o DNI está registrado, recibirás instrucciones para recuperar tu contraseña.",
+            login_id=""
+        )
+    
+    # Verificar que el usuario tenga email
+    if not user.get("email"):
+        return render_template(
+            "forgot_password.html",
+            errores=["Tu cuenta no tiene un email asociado. Contacta al administrador."],
+            exito=None,
+            login_id=login_id
+        ), 400
+
+    try:
+        # Crear token de recuperación
+        token = db_mod.create_password_reset_token(user["id"])
+        
+        # Enviar email
+        from app.service.emailer import enviar_ticket
+        from flask import url_for
+        
+        reset_url = url_for('auth.reset_password', token=token, _external=True)
+        
+        cuerpo = f"""
+Hola {user['nombre']} {user['apellido']},
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta en Cinema3D.
+
+Para continuar, haz clic en el siguiente enlace:
+{reset_url}
+
+Este enlace es válido por 1 hora.
+
+Si no solicitaste este cambio, puedes ignorar este mensaje.
+
+Saludos,
+Equipo Cinema3D
+        """.strip()
+        
+        enviar_ticket(
+            destino=user["email"],
+            asunto="Recuperación de contraseña - Cinema3D",
+            cuerpo=cuerpo
+        )
+        
+        return render_template(
+            "forgot_password.html",
+            errores=None,
+            exito="Si el email o DNI está registrado, recibirás instrucciones para recuperar tu contraseña.",
+            login_id=""
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error enviando email de recuperación: {e}")
+        return render_template(
+            "forgot_password.html",
+            errores=["Error interno. Intenta nuevamente más tarde."],
+            exito=None,
+            login_id=login_id
+        ), 500
+
+
+@bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    """
+    Formulario para restablecer contraseña usando un token válido.
+    """
+    # Validar token
+    user_id = db_mod.validate_password_reset_token(token)
+    
+    if not user_id:
+        flash("El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.", "error")
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == "GET":
+        return render_template("reset_password.html", token=token, errores=None)
+
+    # POST - procesar nueva contraseña
+    password = request.form.get("password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+    
+    errores = []
+    
+    if len(password) < 6:
+        errores.append("La contraseña debe tener al menos 6 caracteres.")
+    
+    if password != confirm_password:
+        errores.append("Las contraseñas no coinciden.")
+    
+    if errores:
+        return render_template("reset_password.html", token=token, errores=errores), 400
+    
+    try:
+        # Actualizar contraseña
+        password_hash = generate_password_hash(password)
+        db_mod.execute(
+            "UPDATE usuarios SET contrasena = ? WHERE id = ?",
+            [password_hash, user_id],
+            commit=True
+        )
+        
+        # Marcar token como usado
+        db_mod.use_password_reset_token(token)
+        
+        # Limpiar tokens expirados (mantenimiento)
+        db_mod.cleanup_expired_reset_tokens()
+        
+        flash("Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión.", "success")
+        return redirect(url_for('auth.login'))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error actualizando contraseña: {e}")
+        return render_template(
+            "reset_password.html",
+            token=token,
+            errores=["Error interno. Intenta nuevamente más tarde."]
+        ), 500

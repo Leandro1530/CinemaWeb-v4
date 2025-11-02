@@ -232,6 +232,45 @@ CREATE TABLE IF NOT EXISTS seat_reservas (
     seat          TEXT    NOT NULL,
     reserved_at   INTEGER NOT NULL
 );
+
+-- =========================
+--  Tabla: password_reset_tokens
+-- =========================
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL,
+    token      TEXT    NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used       INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token);
+CREATE INDEX        IF NOT EXISTS idx_reset_user  ON password_reset_tokens(user_id);
+
+-- =========================
+--  Tabla: funciones
+-- =========================
+CREATE TABLE IF NOT EXISTS funciones (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    pelicula_id        TEXT    NOT NULL,
+    titulo             TEXT    NOT NULL,
+    genero             TEXT,
+    duracion           INTEGER,
+    clasificacion      TEXT,
+    poster             TEXT,
+    descripcion        TEXT,
+    trailer_url        TEXT,
+    fecha              TEXT    NOT NULL,
+    hora               TEXT    NOT NULL,
+    sala               TEXT    NOT NULL,
+    precio             INTEGER DEFAULT 1000,
+    asientos_disponibles INTEGER DEFAULT 50,
+    created_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at         DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_funciones_fecha ON funciones(fecha);
+CREATE INDEX IF NOT EXISTS idx_funciones_pelicula ON funciones(pelicula_id);
 """
 
 
@@ -721,3 +760,96 @@ def confirm_seats(
             )
 
     return seats
+
+
+# =======================================================================
+# Password Reset Tokens
+# =======================================================================
+
+def create_password_reset_token(user_id: int) -> str:
+    """
+    Crea un token de recuperación de contraseña para el usuario.
+    Elimina tokens anteriores del mismo usuario y genera uno nuevo.
+    
+    :param user_id: ID del usuario
+    :return: token generado
+    """
+    import secrets
+    import time
+    
+    # Generar token único
+    token = secrets.token_urlsafe(32)
+    
+    # Expiración en 1 hora (3600 segundos)
+    expires_at = int(time.time()) + 3600
+    
+    # Eliminar tokens anteriores del usuario
+    execute(
+        "DELETE FROM password_reset_tokens WHERE user_id = ?",
+        [user_id],
+        commit=True
+    )
+    
+    # Crear nuevo token
+    execute(
+        "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+        [user_id, token, expires_at],
+        commit=True
+    )
+    
+    return token
+
+
+def validate_password_reset_token(token: str) -> Optional[int]:
+    """
+    Valida un token de recuperación de contraseña.
+    
+    :param token: token a validar
+    :return: user_id si el token es válido, None en caso contrario
+    """
+    import time
+    
+    current_time = int(time.time())
+    
+    # Buscar token válido (no usado y no expirado)
+    row = query_one(
+        """
+        SELECT user_id FROM password_reset_tokens 
+        WHERE token = ? AND expires_at > ? AND used = 0
+        """,
+        [token, current_time]
+    )
+    
+    return row["user_id"] if row else None
+
+
+def use_password_reset_token(token: str) -> bool:
+    """
+    Marca un token como usado para que no pueda reutilizarse.
+    
+    :param token: token a marcar como usado
+    :return: True si se marcó correctamente, False si no existe o ya estaba usado
+    """
+    result = execute(
+        "UPDATE password_reset_tokens SET used = 1 WHERE token = ? AND used = 0",
+        [token],
+        commit=True
+    )
+    
+    return result > 0
+
+
+def cleanup_expired_reset_tokens() -> None:
+    """
+    Limpia tokens de recuperación expirados.
+    Se puede llamar periódicamente para mantener la tabla limpia.
+    """
+    import time
+    
+    current_time = int(time.time())
+    
+    execute(
+        "DELETE FROM password_reset_tokens WHERE expires_at < ?",
+        [current_time],
+        commit=True
+    )

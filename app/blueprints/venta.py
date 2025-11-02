@@ -72,17 +72,57 @@ def _rows_cols_from_config() -> tuple[list[str], int, int]:
 def _movies_source() -> list[dict]:
     """
     Fuente de catálogo:
-    - Por ahora usa datos del archivo seed.py directamente
-    - TODO: Migrar a base de datos cuando esté configurada
+    - Lee las funciones desde la base de datos (creadas por admin)
+    - Fallback a datos del archivo seed.py si no hay funciones en DB
     """
     try:
-        # Temporalmente usar datos del archivo seed.py
-        current_app.logger.info("📽️ Usando datos del archivo seed.py")
-        return MOVIES or []
+        # Intentar cargar funciones desde la base de datos
+        funciones_db = db_mod.query_all("""
+            SELECT DISTINCT 
+                pelicula_id as id, titulo, genero, duracion, clasificacion,
+                poster, descripcion, trailer_url, fecha, hora, sala
+            FROM funciones
+            WHERE fecha >= date('now')
+            ORDER BY fecha, hora
+        """)
+        
+        if funciones_db:
+            # Agrupar funciones por película
+            movies_dict = {}
+            for f in funciones_db:
+                movie_id = f['id']
+                if movie_id not in movies_dict:
+                    movies_dict[movie_id] = {
+                        "id": movie_id,
+                        "titulo": f['titulo'],
+                        "poster_url": f['poster'] or f"/static/img/cartelera/{movie_id}.jpg",
+                        "trailer_url": f['trailer_url'] or "",
+                        "sinopsis": f['descripcion'] or f"Descripción de {f['titulo']}",
+                        "duracion_min": int(f['duracion']) if f['duracion'] else 90,
+                        "clasificacion": f['clasificacion'] or "PG-13",
+                        "genero": f['genero'] or "Drama",
+                        "funciones": []
+                    }
+                
+                movies_dict[movie_id]["funciones"].append({
+                    "fecha": f['fecha'],
+                    "hora": f['hora'],
+                    "sala": f['sala']
+                })
+            
+            movies = list(movies_dict.values())
+            current_app.logger.info(f"📽️ Cargadas {len(movies)} películas desde base de datos")
+            return movies
+        
+        else:
+            # Fallback a datos hardcodeados si no hay funciones en DB
+            current_app.logger.info("📽️ No hay funciones en DB, usando datos del archivo seed.py")
+            return MOVIES or []
         
     except Exception as e:
-        current_app.logger.error(f"Error al cargar películas: {e}")
-        return []
+        current_app.logger.error(f"Error al cargar películas desde DB: {e}")
+        current_app.logger.info("📽️ Fallback: usando datos del archivo seed.py")
+        return MOVIES or []
 
 
 def _normalize_seats(value: str | Iterable[str]) -> list[str]:
