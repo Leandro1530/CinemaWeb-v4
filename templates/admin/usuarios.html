@@ -35,14 +35,7 @@
   .no-results{text-align:center;padding:3rem;color:#9ca3af;}
   .alert{padding:1rem;border-radius:10px;margin-bottom:1rem;}
   .alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;}
-
-  .modal{ display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.8); }
-  .modal-content{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:16px; backdrop-filter:blur(18px); margin:10% auto; max-width:380px; padding:2rem; text-align:center; }
-  .modal-content h3{color:#fff;margin-bottom:1rem;}
-  .modal-content p{color:#9ca3af;margin-bottom:2rem;}
-  .modal-actions{display:flex;gap:1rem;justify-content:center;}
-  .btn-cancel{background:rgba(107,114,128,.2);color:#9ca3af;padding:.7rem 1.4rem;border:none;border-radius:8px;cursor:pointer;}
-  .btn-confirm{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:.7rem 1.4rem;border:none;border-radius:8px;cursor:pointer;}
+  .alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
 
   @media(max-width:768px){ .search-filters{flex-direction:column;} }
 </style>
@@ -56,8 +49,12 @@
 <section class="admin-users-wrap">
   <div class="header-flex"><h1>Gestionar Usuarios</h1></div>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}{% for message in messages %}<div class="alert alert-success">{{ message }}</div>{% endfor %}{% endif %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
   {% endwith %}
 
   <div class="search-filters">
@@ -84,7 +81,9 @@
           <div class="actions">
             <a href="{{ url_for('admin.editar_usuario', user_id=usuario.id) }}" class="btn-small btn-edit" title="Editar">✏️</a>
             {% if usuario.id != session.user_id %}
-              <button class="btn-small btn-delete" onclick="confirmDelete('{{ usuario.id }}', '{{ usuario.email }}')" title="Eliminar">🗑️</button>
+              <form method="POST" action="{{ url_for('admin.eliminar_usuario', user_id=usuario.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar usuario {{ usuario.email }}? Esta acción no se puede deshacer.');">
+                <button type="submit" class="btn-small btn-delete" title="Eliminar">🗑️</button>
+              </form>
             {% endif %}
           </div>
         </td>
@@ -96,19 +95,6 @@
     <div class="no-results"><p>No hay usuarios registrados.</p></div>
   {% endif %}
 </section>
-
-<div id="deleteModal" class="modal">
-  <div class="modal-content">
-    <h3>Confirmar Eliminación</h3>
-    <p id="deleteMessage">¿Estás seguro de que deseas eliminar este usuario?</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-      <form id="deleteForm" method="POST" style="display:inline;">
-        <button type="submit" class="btn-confirm">Eliminar</button>
-      </form>
-    </div>
-  </div>
-</div>
 
 <script>
   document.getElementById('searchInput').addEventListener('input', filterUsers);
@@ -124,13 +110,5 @@
       r.style.display=match?'':'none';
     });
   }
-
-  function confirmDelete(id,email){
-    document.getElementById('deleteMessage').textContent=`¿Eliminar usuario "${email}"?`;
-    document.getElementById('deleteForm').action='{{ url_for("admin.eliminar_usuario", user_id=0)[:-1] }}'.replace(/0$/, id);
-    document.getElementById('deleteModal').style.display='block';
-  }
-  function closeDeleteModal(){ document.getElementById('deleteModal').style.display='none'; }
-  window.onclick=e=>{ const m=document.getElementById('deleteModal'); if(e.target===m) m.style.display='none'; }
 </script>
 {% endblock %}

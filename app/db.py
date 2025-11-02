@@ -93,6 +93,13 @@ def init_app(app) -> None:
         create_schema()
         click.echo("✔ Base de datos inicializada / migrada correctamente.")
 
+    @app.cli.command("load-seed")
+    def load_seed_command():
+        """Carga los datos del archivo seed.py en la base de datos."""
+        from app.db_migrations import load_seed_data
+        load_seed_data()
+        click.echo("✔ Datos semilla cargados correctamente.")
+
 
 # ----------------------------------------------------------------------
 # API de consultas y escritura

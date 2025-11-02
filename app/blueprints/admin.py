@@ -224,26 +224,32 @@ def nuevo_usuario():
     
     # POST - crear usuario
     try:
+        # Función auxiliar para procesar campos de texto de manera segura
+        def safe_strip(value):
+            return value.strip() if value else None
+        
+        # Guardar el rol antes de crear el diccionario de datos
+        rol = request.form.get('rol', 'usuario')
+        
         data = {
-            'nombre': request.form.get('nombre').strip(),
-            'apellido': request.form.get('apellido').strip(),
+            'nombre': safe_strip(request.form.get('nombre')) or '',
+            'apellido': safe_strip(request.form.get('apellido')) or '',
             'tipo_documento': request.form.get('tipo_documento', 'DNI'),
-            'nro_documento': request.form.get('nro_documento').strip(),
-            'email': request.form.get('email').strip() or None,
-            'contrasena_hash': generate_password_hash(request.form.get('contrasena')),
-            'rol': request.form.get('rol', 'usuario'),
-            'telefono': request.form.get('telefono').strip() or None,
-            'ciudad': request.form.get('ciudad').strip() or None,
-            'provincia': request.form.get('provincia').strip() or None,
-            'direccion': request.form.get('direccion').strip() or None,
-            'codigo_postal': request.form.get('codigo_postal').strip() or None
+            'nro_documento': safe_strip(request.form.get('nro_documento')) or 'temp_' + str(abs(hash(request.form.get('email', '')))),
+            'email': safe_strip(request.form.get('email')) or None,
+            'contrasena_hash': generate_password_hash(request.form.get('password') or ''),
+            'telefono': safe_strip(request.form.get('telefono')),
+            'ciudad': safe_strip(request.form.get('ciudad')),
+            'provincia': safe_strip(request.form.get('provincia')),
+            'direccion': safe_strip(request.form.get('direccion')),
+            'codigo_postal': safe_strip(request.form.get('codigo_postal'))
         }
         
+        # Crear el usuario sin el rol
         user_id = db_mod.upsert_usuario(**data)
         
-        # Actualizar el rol si es diferente de 'usuario'
-        if data['rol'] != 'usuario':
-            db_mod.execute("UPDATE usuarios SET rol = ? WHERE id = ?", [data['rol'], user_id], commit=True)
+        # Actualizar el rol después de crear el usuario
+        db_mod.execute("UPDATE usuarios SET rol = ? WHERE id = ?", [rol, user_id], commit=True)
         
         flash("Usuario creado exitosamente", "success")
         return redirect(url_for('admin.usuarios'))
@@ -267,6 +273,10 @@ def editar_usuario(user_id):
     
     # POST - actualizar usuario
     try:
+        # Función auxiliar para procesar campos de texto de manera segura
+        def safe_strip(value):
+            return value.strip() if value else None
+        
         # Actualizar datos básicos
         db_mod.execute("""
             UPDATE usuarios 
@@ -274,23 +284,23 @@ def editar_usuario(user_id):
                 provincia=?, direccion=?, codigo_postal=?, rol=?
             WHERE id=?
         """, [
-            request.form.get('nombre').strip(),
-            request.form.get('apellido').strip(),
-            request.form.get('email').strip() or None,
-            request.form.get('telefono').strip() or None,
-            request.form.get('ciudad').strip() or None,
-            request.form.get('provincia').strip() or None,
-            request.form.get('direccion').strip() or None,
-            request.form.get('codigo_postal').strip() or None,
+            safe_strip(request.form.get('nombre')) or '',
+            safe_strip(request.form.get('apellido')) or '',
+            safe_strip(request.form.get('email')),
+            safe_strip(request.form.get('telefono')),
+            safe_strip(request.form.get('ciudad')),
+            safe_strip(request.form.get('provincia')),
+            safe_strip(request.form.get('direccion')),
+            safe_strip(request.form.get('codigo_postal')),
             request.form.get('rol', 'usuario'),
             user_id
         ], commit=True)
         
         # Si hay nueva contraseña, actualizarla
-        nueva_contrasena = request.form.get('nueva_contrasena')
+        nueva_contrasena = request.form.get('password')
         if nueva_contrasena:
             password_hash = generate_password_hash(nueva_contrasena)
-            db_mod.execute("UPDATE usuarios SET contrasena = ? WHERE id = ?", 
+            db_mod.execute("UPDATE usuarios SET contrasena_hash = ? WHERE id = ?", 
                          [password_hash, user_id], commit=True)
         
         flash("Usuario actualizado exitosamente", "success")
@@ -305,21 +315,30 @@ def editar_usuario(user_id):
 def eliminar_usuario(user_id):
     """Eliminar un usuario"""
     try:
+        # Verificar que el usuario existe
+        usuario = db_mod.query_one("SELECT id, email FROM usuarios WHERE id = ?", [user_id])
+        
+        if not usuario:
+            flash("Usuario no encontrado", "error")
+            return redirect(url_for('admin.usuarios'))
+        
         # No permitir que el admin se elimine a sí mismo
-        if current_user()['id'] == user_id:
+        usuario_actual = current_user()
+        if usuario_actual and usuario_actual.get('id') == user_id:
             flash("No puedes eliminar tu propio usuario", "error")
             return redirect(url_for('admin.usuarios'))
         
-        # Verificar si el usuario tiene transacciones
-        transacciones = db_mod.query_one("SELECT COUNT(*) as count FROM transacciones WHERE usuario_email = (SELECT email FROM usuarios WHERE id = ?)", [user_id])
+        # Primero eliminar todas las transacciones asociadas al usuario
+        db_mod.execute(
+            "DELETE FROM transacciones WHERE usuario_email = ?", 
+            [usuario['email']], 
+            commit=False
+        )
         
-        if transacciones and transacciones['count'] > 0:
-            flash("No se puede eliminar el usuario porque tiene transacciones asociadas", "error")
-            return redirect(url_for('admin.usuarios'))
-        
-        # Eliminar usuario
+        # Luego eliminar el usuario
         db_mod.execute("DELETE FROM usuarios WHERE id = ?", [user_id], commit=True)
-        flash("Usuario eliminado exitosamente", "success")
+        
+        flash("Usuario y sus transacciones eliminados exitosamente", "success")
         
     except Exception as e:
         flash(f"Error al eliminar usuario: {str(e)}", "error")

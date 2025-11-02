@@ -60,8 +60,6 @@
     <div class="yx-container">
       <div>© {{ (now or none) and now.year or 2025 }} CINEMA3D LA RIOJA</div>
       <nav class="hstack">
-        <a href="{{ url_for('main.bienvenida') }}">Inicio</a>
-        <a href="{{ url_for('venta.cartelera') }}">Cartelera</a>
         {% if is_admin() %}<a href="{{ url_for('admin.dashboard') }}">Admin</a>{% endif %}
       </nav>
     </div>

@@ -124,19 +124,28 @@ def migrate_add_mercadopago_support():
             executescript("""
                 CREATE TABLE IF NOT EXISTS funciones (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    pelicula TEXT NOT NULL,
+                    pelicula_id TEXT NOT NULL,
+                    titulo TEXT NOT NULL,
+                    pelicula TEXT,  -- columna legacy por compatibilidad
                     fecha TEXT NOT NULL,
                     hora TEXT NOT NULL,
                     sala TEXT NOT NULL,
-                    precio_entrada DECIMAL(10,2) NOT NULL DEFAULT 0,
+                    precio DECIMAL(10,2) NOT NULL DEFAULT 2500,
+                    precio_entrada DECIMAL(10,2) NOT NULL DEFAULT 2500,  -- alias legacy
                     asientos_totales INTEGER DEFAULT 50,
                     asientos_disponibles INTEGER DEFAULT 50,
+                    genero TEXT,
+                    duracion INTEGER DEFAULT 120,
+                    clasificacion TEXT DEFAULT '+13',
+                    poster TEXT,
+                    descripcion TEXT,
                     activo BOOLEAN DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 
                 CREATE INDEX IF NOT EXISTS idx_funciones_fecha_hora ON funciones(fecha, hora);
                 CREATE INDEX IF NOT EXISTS idx_funciones_pelicula ON funciones(pelicula);
+                CREATE INDEX IF NOT EXISTS idx_funciones_pelicula_id ON funciones(pelicula_id);
                 
                 CREATE TABLE IF NOT EXISTS combos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -252,3 +261,57 @@ def check_migration_needed():
     except Exception as e:
         current_app.logger.error(f"Error verificando migración: {str(e)}")
         return True  # En caso de error, ejecutar migración
+
+
+def load_seed_data():
+    """Carga los datos del archivo seed.py en la base de datos"""
+    from app.data.seed import MOVIES, COMBOS_CATALOG
+    
+    try:
+        conn = get_conn()
+        current_app.logger.info("🌱 Cargando datos semilla...")
+        
+        # Limpiar datos existentes
+        execute("DELETE FROM funciones", commit=False)
+        execute("DELETE FROM combos", commit=False)
+        
+        # Cargar películas y funciones
+        for movie in MOVIES:
+            movie_id = movie['id']
+            titulo = movie['titulo']
+            genero = movie.get('genero', '')
+            duracion = movie.get('duracion_min', 120)
+            clasificacion = movie.get('clasificacion', '+13')
+            poster = movie.get('poster_url', '')
+            descripcion = movie.get('sinopsis', '')
+            
+            # Insertar funciones de la película
+            for funcion in movie.get('funciones', []):
+                execute("""
+                    INSERT INTO funciones (
+                        pelicula_id, titulo, fecha, hora, sala, precio, 
+                        genero, duracion, clasificacion, poster, descripcion,
+                        asientos_disponibles
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, [
+                    movie_id, titulo, funcion['fecha'], funcion['hora'], 
+                    funcion['sala'], 2500, genero, duracion, clasificacion,
+                    poster, descripcion, 50
+                ], commit=False)
+        
+        # Cargar combos
+        for combo in COMBOS_CATALOG:
+            execute("""
+                INSERT INTO combos (id, nombre, descripcion, precio)
+                VALUES (?, ?, ?, ?)
+            """, [
+                combo['id'], combo['nombre'], combo['descripcion'], combo['precio']
+            ], commit=False)
+        
+        # Confirmar todos los cambios
+        conn.commit()
+        current_app.logger.info("✅ Datos semilla cargados correctamente")
+        
+    except Exception as e:
+        current_app.logger.error(f"❌ Error cargando datos semilla: {str(e)}")
+        raise

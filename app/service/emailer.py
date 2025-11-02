@@ -24,7 +24,6 @@ def enviar_ticket(
     asunto: str,
     cuerpo: str,
     adjunto_path: Optional[str] = None,
-    qr_path: Optional[str] = None,
 ) -> None:
     """
     Envía un email (o lo simula si EMAIL_DEBUG=1).
@@ -33,16 +32,14 @@ def enviar_ticket(
     :param asunto: asunto del correo
     :param cuerpo: cuerpo en texto plano
     :param adjunto_path: ruta a PDF (opcional)
-    :param qr_path: ruta a PNG del QR (opcional)
     """
     cfg = current_app.config
     if cfg.get("EMAIL_DEBUG", True):
         # NO enviamos nada en modo debug: sólo logueamos una línea clara.
         current_app.logger.info(
-            "EMAIL_DEBUG=1: no se envía correo. destino=%s adjunto=%s qr=%s",
+            "EMAIL_DEBUG=1: no se envía correo. destino=%s adjunto=%s",
             destino,
             adjunto_path or "-",
-            qr_path or "-",
         )
         return
 
@@ -53,7 +50,7 @@ def enviar_ticket(
         body=cuerpo,
     )
 
-    # Adjuntar PDF
+    # Adjuntar PDF si existe
     if adjunto_path:
         try:
             p = Path(adjunto_path)
@@ -69,23 +66,6 @@ def enviar_ticket(
                 current_app.logger.warning("Adjunto no encontrado: %s", adjunto_path)
         except Exception as e:
             current_app.logger.warning("No se pudo adjuntar %s: %s", adjunto_path, e)
-
-    # Adjuntar QR como PNG
-    if qr_path:
-        try:
-            qr = Path(qr_path)
-            if qr.exists() and qr.is_file():
-                with qr.open("rb") as f:
-                    data = f.read()
-                msg.attach(
-                    filename=qr.name,
-                    content_type="image/png",
-                    data=data,
-                )
-            else:
-                current_app.logger.warning("QR no encontrado: %s", qr_path)
-        except Exception as e:
-            current_app.logger.warning("No se pudo adjuntar QR %s: %s", qr_path, e)
 
     # Enviar con Flask-Mail
     try:

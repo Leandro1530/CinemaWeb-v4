@@ -313,7 +313,7 @@ def mp_success():
     )
 
     # -------- ENVÍOS DE EMAIL --------
-    # 1) Al CLIENTE (con PDF + QR adjuntos)
+    # 1) Al CLIENTE (con adjunto PDF)
     try:
         enviar_ticket(
             destino=email,
@@ -324,9 +324,7 @@ def mp_success():
                     f"Asientos: {', '.join(confirmados) if confirmados else '-'}\n"
                     f"Monto: ${total:.2f}\nCódigo de autorización: {auth_code}\n"),
             adjunto_path=pdf_path,
-            qr_path=qr_path,
         )
-        current_app.logger.info("Email enviado a cliente %s con PDF y QR adjuntos (TRX #%d)", email, trx_id)
     except Exception as e:
         current_app.logger.warning("Email al cliente no enviado: %s", e)
 
@@ -344,10 +342,8 @@ def mp_success():
                         f"Asientos: {', '.join(confirmados) if confirmados else '-'}\n"
                         f"Total: ${total:.2f}\nBrand/Last4: {brand or '-'} • {last4 or '----'}\n"
                         f"Auth: {auth_code}\nTRX local: {trx_id}\n"),
-                adjunto_path=pdf_path,
-                qr_path=qr_path,
+                adjunto_path=pdf_path,  # Podés sacar el adjunto si no querés que llegue al cine
             )
-            current_app.logger.info("Copia interna enviada a %s (TRX #%d)", sales_email, trx_id)
         except Exception as e:
             current_app.logger.warning("Email interno (cine) no enviado: %s", e)
 

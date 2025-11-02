@@ -72,62 +72,17 @@ def _rows_cols_from_config() -> tuple[list[str], int, int]:
 def _movies_source() -> list[dict]:
     """
     Fuente de catálogo:
-    - Consulta la base de datos de funciones para obtener películas dinámicamente.
+    - Por ahora usa datos del archivo seed.py directamente
+    - TODO: Migrar a base de datos cuando esté configurada
     """
-    def safe_get(row, key, default=None):
-        """Helper para obtener valores de sqlite3.Row con default"""
-        try:
-            return row[key] if row[key] is not None else default
-        except (KeyError, IndexError):
-            return default
-    
     try:
-        # Obtener todas las funciones desde la base de datos
-        funciones_db = db_mod.query_all("""
-            SELECT DISTINCT pelicula_id, titulo, genero, duracion, clasificacion,
-                   poster, descripcion
-            FROM funciones
-            ORDER BY titulo
-        """)
+        # Temporalmente usar datos del archivo seed.py
+        current_app.logger.info("📽️ Usando datos del archivo seed.py")
+        return MOVIES or []
         
-        movies = []
-        for pelicula in funciones_db:
-            # Obtener todas las funciones de esta película
-            funciones_pelicula = db_mod.query_all("""
-                SELECT fecha, hora, sala, precio, asientos_disponibles
-                FROM funciones
-                WHERE pelicula_id = ?
-                ORDER BY fecha, hora
-            """, [pelicula['pelicula_id']])
-            
-            # Formatear las funciones
-            funciones_formateadas = []
-            for funcion in funciones_pelicula:
-                funciones_formateadas.append({
-                    'fecha': safe_get(funcion, 'fecha'),
-                    'hora': safe_get(funcion, 'hora'),
-                    'sala': safe_get(funcion, 'sala', 'Sala 1'),
-                    'precio': safe_get(funcion, 'precio', 100),
-                    'asientos_disponibles': safe_get(funcion, 'asientos_disponibles', 50)
-                })
-            
-            # Construir el objeto película compatible con el formato original
-            movies.append({
-                'id': pelicula['pelicula_id'],
-                'titulo': pelicula['titulo'],
-                'poster_url': safe_get(pelicula, 'poster', ''),
-                'sinopsis': safe_get(pelicula, 'descripcion', ''),
-                'duracion_min': safe_get(pelicula, 'duracion', 120),
-                'clasificacion': safe_get(pelicula, 'clasificacion', '+13'),
-                'genero': safe_get(pelicula, 'genero', 'Acción'),
-                'funciones': funciones_formateadas
-            })
-        
-        return movies
     except Exception as e:
-        current_app.logger.error(f"Error al cargar películas desde BD: {e}")
-        # Fallback a MOVIES hardcodeado en caso de error
-        return current_app.config.get("DEMO_MOVIES") or MOVIES or []
+        current_app.logger.error(f"Error al cargar películas: {e}")
+        return []
 
 
 def _normalize_seats(value: str | Iterable[str]) -> list[str]:

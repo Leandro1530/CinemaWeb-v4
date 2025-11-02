@@ -187,11 +187,11 @@
         {% if combos %}
           {% for c in combos %}
           <article class="card-c" data-combo-id="{{ c.id }}">
-            <!-- IMAGEN DEL COMBO desde static/images/combos -->
+            <!-- IMAGEN DEL COMBO desde static/img/combos -->
             <div class="card-img">
-              <img src="{{ url_for('static', filename='images/combos/Combo ' + c.id|string + '.png') }}" 
+              <img src="{{ url_for('static', filename='img/combos/Combo ' + c.id|string + '.png') }}" 
                    alt="{{ c.nombre }}"
-                   onerror="this.src='{{ url_for('static', filename='images/combos/default.jpg') }}'">
+                   onerror="this.src='{{ url_for('static', filename='img/combos/default.jpg') }}'">
               <div class="card-img-badge" id="badge-{{ c.id }}">×0</div>
             </div>
 

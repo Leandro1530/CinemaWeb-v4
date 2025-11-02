@@ -21,6 +21,28 @@
 .rsv-title{ margin:0; font-weight:900; font-size:clamp(1.1rem,2.4vw,1.45rem); }
 .rsv-meta{ color:#9ca3af; margin-top:.2rem }
 
+/* ===== Botón volver ===== */
+.btn-volver{
+  display:flex;
+  align-items:center;
+  padding:8px 16px;
+  background:rgba(79,109,245,.14);
+  border:1px solid rgba(79,109,245,.30);
+  color:#eaf0ff;
+  text-decoration:none;
+  border-radius:999px;
+  font-weight:600;
+  font-size:.9rem;
+  transition:all .2s ease;
+  white-space:nowrap;
+}
+.btn-volver:hover{
+  background:rgba(79,109,245,.22);
+  border-color:rgba(79,109,245,.45);
+  transform:translateX(-2px);
+  color:#fff;
+}
+
 /* ===== Grid principal (2 col.) ===== */
 .rsv-grid{
   display:grid; gap:14px;
@@ -106,6 +128,17 @@
 @media (max-width:1024px){
   .rsv-grid{ grid-template-columns: 1fr; }
 }
+@media (max-width:640px){
+  .rsv-hero > div{
+    flex-direction:column;
+    align-items:flex-start !important;
+    gap:12px;
+  }
+  .btn-volver{
+    align-self:stretch;
+    justify-content:center;
+  }
+}
 @media (max-width:768px){
   .row-label{ display:none; }
   .btn-primary,.btn-outline{ width:100%; }
@@ -137,10 +170,20 @@
     </div>
   </div>
 
-  <!-- Encabezado sin botón “PANTALLA” -->
+  <!-- Encabezado con botón de volver -->
   <section class="rsv-hero" aria-hidden="true" id="hero">
-    <h1 class="rsv-title">Elegí tus asientos</h1>
-    <div class="rsv-meta">{{ fecha }} • {{ hora }} • Sala {{ sala }}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div>
+        <h1 class="rsv-title">Elegí tus asientos</h1>
+        <div class="rsv-meta">{{ fecha }} • {{ hora }} • Sala {{ sala }}</div>
+      </div>
+      <a href="{{ url_for('venta.cartelera') }}" class="btn-volver">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right:6px;">
+          <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Volver a cartelera
+      </a>
+    </div>
   </section>
 
   <!-- GRID: Sala izquierda | Resumen derecha -->
